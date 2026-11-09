@@ -1,9 +1,201 @@
-order_id,supplier_id,supplier_name,order_date,promised_delivery_date,actual_delivery_date,order_quantity,accepted_quantity,unit_price
-1001,SUP01,Tedarikci A,2026-01-05,2026-01-15,2026-01-15,1000,980,45.50
-1002,SUP01,Tedarikci A,2026-01-20,2026-01-30,2026-02-02,500,500,45.50
-1003,SUP02,Tedarikci B,2026-01-10,2026-01-25,2026-01-24,2000,1900,42.00
-1004,SUP02,Tedarikci B,2026-02-01,2026-02-15,2026-02-20,1500,1350,42.00
-1005,SUP03,Tedarikci C,2026-01-12,2026-01-22,2026-01-22,800,800,50.00
-1006,SUP03,Tedarikci C,2026-02-05,2026-02-15,2026-02-15,1200,1180,49.50
-1007,SUP01,Tedarikci A,2026-02-10,2026-02-20,2026-02-20,1500,1470,45.00
-1008,SUP02,Tedarikci B,2026-02-12,2026-02-22,2026-02-28,3000,2700,41.50
+order_id,supplier_name,product_name,order_date,promised_delivery_date,actual_delivery_date,order_quantity,accepted_quantity,unit_price
+2000,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-21,2026-02-24,2026-02-24,1000,970,49.88
+2001,Apex Fasteners Inc,Karton Koli 40x40,2026-01-15,2026-01-19,2026-01-19,50,49,98.81
+2002,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-03-13,2026-03-16,2026-03-16,250,246,61.75
+2003,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-03-02,2026-03-15,2026-03-15,50,49,31.1
+2004,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-21,2026-01-26,2026-01-27,500,493,12.32
+2005,Global Logistics Corp,Rulman 6204,2026-03-24,2026-03-30,2026-03-31,50,49,65.66
+2006,TeknoLojistik A.Ş.,Civata M8x25,2026-03-28,2026-04-16,2026-04-28,100,94,46.11
+2007,Apex Fasteners Inc,Rulman 6204,2026-03-16,2026-03-29,2026-03-29,500,494,88.16
+2008,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-03-16,2026-04-02,2026-04-09,500,464,134.19
+2009,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-29,2026-04-09,2026-04-09,500,497,91.3
+2010,Global Logistics Corp,Civata M8x25,2026-01-24,2026-02-02,2026-02-02,100,98,106.87
+2011,Global Logistics Corp,Karton Koli 40x40,2026-01-03,2026-01-10,2026-01-10,500,494,61.31
+2012,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-01-22,2026-01-29,2026-01-29,1000,992,78.14
+2013,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-22,2026-02-27,2026-02-27,1000,975,42.23
+2014,Global Logistics Corp,Sensör Kartı V2,2026-01-02,2026-01-11,2026-01-13,500,492,75.79
+2015,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-03-29,2026-04-03,2026-04-06,50,49,87.39
+2016,Apex Fasteners Inc,Rulman 6204,2026-01-30,2026-02-10,2026-02-10,250,243,33.73
+2017,Ege Ambalaj Çözümleri,Civata M8x25,2026-02-07,2026-02-19,2026-02-20,100,97,45.58
+2018,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-01-02,2026-01-21,2026-01-28,1000,927,51.51
+2019,Ege Ambalaj Çözümleri,Civata M8x25,2026-03-05,2026-03-11,2026-03-11,50,48,97.91
+2020,TeknoLojistik A.Ş.,Sensör Kartı V2,2026-03-01,2026-03-12,2026-03-12,250,236,57.32
+2021,Global Logistics Corp,Rulman 6204,2026-01-21,2026-01-30,2026-01-31,100,98,85.97
+2022,Apex Fasteners Inc,Civata M8x25,2026-02-02,2026-02-05,2026-02-06,250,247,27.79
+2023,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-17,2026-03-22,2026-03-22,1000,976,37.21
+2024,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-02-27,2026-03-02,2026-03-02,100,98,55.21
+2025,TeknoLojistik A.Ş.,Civata M8x25,2026-01-22,2026-02-07,2026-02-10,1000,938,35.81
+2026,Global Logistics Corp,Civata M8x25,2026-03-30,2026-04-04,2026-04-04,50,49,71.93
+2027,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-18,2026-03-02,2026-03-02,1000,976,68.74
+2028,Global Logistics Corp,Sensör Kartı V2,2026-02-28,2026-03-08,2026-03-08,1000,999,23.18
+2029,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-02-11,2026-02-25,2026-02-25,500,471,34.25
+2030,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-01,2026-03-13,2026-03-16,500,491,62.45
+2031,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-03-21,2026-03-30,2026-04-02,500,486,96.22
+2032,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-01-15,2026-01-18,2026-01-18,500,490,64.34
+2033,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-03-03,2026-03-15,2026-03-15,50,49,144.57
+2034,Global Logistics Corp,Civata M8x25,2026-03-03,2026-03-10,2026-03-10,1000,986,23.22
+2035,Apex Fasteners Inc,Civata M8x25,2026-02-16,2026-02-21,2026-02-21,100,99,57.69
+2036,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-03-03,2026-03-16,2026-03-19,250,230,132.85
+2037,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-02-20,2026-02-25,2026-02-28,50,49,89.59
+2038,Apex Fasteners Inc,Karton Koli 40x40,2026-02-24,2026-03-05,2026-03-06,500,496,70.06
+2039,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-05,2026-03-18,2026-03-17,50,49,54.81
+2040,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-01-03,2026-01-09,2026-01-09,500,489,59.69
+2041,Apex Fasteners Inc,Plastik Enjeksiyon Gövde,2026-02-20,2026-03-05,2026-03-05,500,485,56.01
+2042,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-01-07,2026-01-23,2026-02-04,1000,976,79.22
+2043,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-01-21,2026-02-08,2026-02-15,250,235,108.82
+2044,Global Logistics Corp,Karton Koli 40x40,2026-03-14,2026-03-21,2026-03-22,100,99,65.53
+2045,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-02-08,2026-02-16,2026-02-16,1000,981,61.89
+2046,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-01-18,2026-01-26,2026-01-26,500,494,21.69
+2047,Apex Fasteners Inc,Plastik Enjeksiyon Gövde,2026-01-04,2026-01-16,2026-01-16,1000,975,11.59
+2048,Ege Ambalaj Çözümleri,Rulman 6204,2026-03-30,2026-04-10,2026-04-10,250,246,91.67
+2049,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-03-01,2026-03-08,2026-03-07,100,97,11.7
+2050,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-01-14,2026-01-25,2026-01-25,250,244,107.36
+2051,TeknoLojistik A.Ş.,Rulman 6204,2026-01-09,2026-01-21,2026-02-02,1000,977,107.57
+2052,Apex Fasteners Inc,Sensör Kartı V2,2026-03-31,2026-04-12,2026-04-12,500,491,56.99
+2053,Apex Fasteners Inc,Civata M8x25,2026-02-22,2026-03-05,2026-03-05,500,491,20.88
+2054,Global Logistics Corp,Rulman 6204,2026-01-02,2026-01-11,2026-01-11,50,49,67.57
+2055,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-03-25,2026-04-01,2026-04-01,100,98,68.33
+2056,Ege Ambalaj Çözümleri,Civata M8x25,2026-03-01,2026-03-10,2026-03-10,250,243,16.33
+2057,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-03-12,2026-03-23,2026-03-26,250,243,93.18
+2058,Ege Ambalaj Çözümleri,Civata M8x25,2026-02-13,2026-02-16,2026-02-15,50,49,68.07
+2059,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-01-08,2026-01-22,2026-01-25,1000,936,149.53
+2060,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-02-16,2026-03-06,2026-03-06,50,46,43.75
+2061,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-04,2026-02-08,2026-02-08,50,49,115.98
+2062,TeknoLojistik A.Ş.,Civata M8x25,2026-03-19,2026-03-29,2026-04-01,250,236,82.82
+2063,Ege Ambalaj Çözümleri,Rulman 6204,2026-03-22,2026-03-31,2026-04-01,50,48,28.76
+2064,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-02-05,2026-02-16,2026-02-19,500,478,147.26
+2065,Apex Fasteners Inc,Civata M8x25,2026-02-19,2026-02-22,2026-02-23,500,492,86.64
+2066,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-04,2026-01-10,2026-01-10,50,48,142.93
+2067,TeknoLojistik A.Ş.,Sensör Kartı V2,2026-01-02,2026-01-16,2026-01-16,1000,967,147.2
+2068,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-06,2026-01-15,2026-01-15,250,247,85.22
+2069,Global Logistics Corp,Sensör Kartı V2,2026-02-23,2026-03-02,2026-03-04,500,494,58.39
+2070,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-01-04,2026-01-11,2026-01-11,100,98,41.34
+2071,Global Logistics Corp,Karton Koli 40x40,2026-02-23,2026-03-03,2026-03-03,50,49,84.82
+2072,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-03-04,2026-03-15,2026-03-15,250,244,15.5
+2073,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-18,2026-01-24,2026-01-25,1000,976,10.36
+2074,Global Logistics Corp,Civata M8x25,2026-03-31,2026-04-06,2026-04-07,500,499,61.65
+2075,Apex Fasteners Inc,Plastik Enjeksiyon Gövde,2026-02-13,2026-02-17,2026-02-17,250,245,84.5
+2076,Global Logistics Corp,Rulman 6204,2026-02-03,2026-02-08,2026-02-09,1000,998,35.52
+2077,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-03-15,2026-03-26,2026-03-26,50,48,58.01
+2078,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-03-03,2026-03-13,2026-03-13,100,99,88.08
+2079,Apex Fasteners Inc,Sensör Kartı V2,2026-01-14,2026-01-27,2026-01-27,100,97,95.06
+2080,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-17,2026-02-25,2026-02-25,1000,982,24.25
+2081,Ege Ambalaj Çözümleri,Rulman 6204,2026-01-15,2026-01-25,2026-01-25,250,242,83.43
+2082,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-13,2026-03-21,2026-03-24,500,491,138.44
+2083,TeknoLojistik A.Ş.,Rulman 6204,2026-03-19,2026-04-05,2026-04-08,100,92,87.95
+2084,Global Logistics Corp,Civata M8x25,2026-03-28,2026-04-02,2026-04-03,500,494,69.56
+2085,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-03-03,2026-03-15,2026-03-15,250,239,140.48
+2086,Global Logistics Corp,Civata M8x25,2026-02-09,2026-02-15,2026-02-15,500,498,38.24
+2087,Global Logistics Corp,Rulman 6204,2026-03-26,2026-04-02,2026-04-02,250,245,76.24
+2088,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-21,2026-03-31,2026-04-03,100,98,27.4
+2089,Apex Fasteners Inc,Rulman 6204,2026-03-23,2026-04-02,2026-04-03,500,488,127.86
+2090,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-02-22,2026-03-06,2026-03-09,1000,948,36.1
+2091,Apex Fasteners Inc,Karton Koli 40x40,2026-01-24,2026-02-03,2026-02-03,100,97,64.94
+2092,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-01-26,2026-01-29,2026-01-29,50,48,114.67
+2093,Apex Fasteners Inc,Karton Koli 40x40,2026-03-30,2026-04-07,2026-04-10,250,244,86.0
+2094,Apex Fasteners Inc,Sensör Kartı V2,2026-03-01,2026-03-10,2026-03-10,1000,970,79.36
+2095,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-02-10,2026-02-20,2026-02-20,1000,945,119.0
+2096,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-01-29,2026-02-13,2026-02-16,100,95,57.89
+2097,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-01-15,2026-01-21,2026-01-21,1000,976,85.58
+2098,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-02-14,2026-02-27,2026-02-27,500,487,85.98
+2099,Ege Ambalaj Çözümleri,Civata M8x25,2026-03-06,2026-03-16,2026-03-16,250,244,31.47
+2100,Global Logistics Corp,Sensör Kartı V2,2026-03-30,2026-04-07,2026-04-09,250,246,140.5
+2101,Global Logistics Corp,Civata M8x25,2026-03-12,2026-03-18,2026-03-18,50,49,90.68
+2102,Global Logistics Corp,Rulman 6204,2026-01-09,2026-01-18,2026-01-23,250,245,73.12
+2103,Global Logistics Corp,Rulman 6204,2026-03-29,2026-04-05,2026-04-05,50,49,131.79
+2104,Global Logistics Corp,Rulman 6204,2026-01-01,2026-01-10,2026-01-10,100,99,122.4
+2105,Apex Fasteners Inc,Civata M8x25,2026-01-08,2026-01-17,2026-01-17,250,244,139.21
+2106,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-03-29,2026-04-03,2026-04-03,250,245,73.34
+2107,Global Logistics Corp,Karton Koli 40x40,2026-03-04,2026-03-11,2026-03-11,50,49,60.74
+2108,TeknoLojistik A.Ş.,Rulman 6204,2026-01-11,2026-01-24,2026-01-27,500,487,74.26
+2109,Ege Ambalaj Çözümleri,Rulman 6204,2026-03-22,2026-03-31,2026-03-31,50,48,53.39
+2110,Apex Fasteners Inc,Karton Koli 40x40,2026-01-08,2026-01-18,2026-01-18,50,49,15.12
+2111,TeknoLojistik A.Ş.,Civata M8x25,2026-02-04,2026-02-14,2026-02-17,100,94,84.82
+2112,Global Logistics Corp,Rulman 6204,2026-02-04,2026-02-11,2026-02-11,1000,994,20.57
+2113,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-02-02,2026-02-06,2026-02-07,50,49,13.55
+2114,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-05,2026-01-15,2026-01-15,250,243,80.77
+2115,Global Logistics Corp,Rulman 6204,2026-02-10,2026-02-16,2026-02-17,500,490,43.35
+2116,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-28,2026-02-05,2026-02-05,500,493,142.22
+2117,Ege Ambalaj Çözümleri,Civata M8x25,2026-01-07,2026-01-12,2026-01-12,50,48,39.1
+2118,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-14,2026-03-21,2026-03-21,100,98,137.49
+2119,Apex Fasteners Inc,Sensör Kartı V2,2026-03-13,2026-03-21,2026-03-22,500,492,97.38
+2120,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-01-12,2026-01-22,2026-01-22,500,490,146.44
+2121,Ege Ambalaj Çözümleri,Rulman 6204,2026-02-03,2026-02-14,2026-02-14,100,97,13.15
+2122,Apex Fasteners Inc,Plastik Enjeksiyon Gövde,2026-02-02,2026-02-06,2026-02-06,500,497,28.52
+2123,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-17,2026-02-25,2026-02-24,100,98,90.71
+2124,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-01-23,2026-01-30,2026-01-30,1000,988,11.54
+2125,TeknoLojistik A.Ş.,Civata M8x25,2026-03-03,2026-03-17,2026-03-17,500,462,98.63
+2126,Apex Fasteners Inc,Sensör Kartı V2,2026-03-29,2026-04-02,2026-04-02,100,97,69.09
+2127,Global Logistics Corp,Sensör Kartı V2,2026-02-06,2026-02-15,2026-02-16,250,247,44.35
+2128,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-02-13,2026-02-22,2026-02-22,250,242,142.9
+2129,TeknoLojistik A.Ş.,Rulman 6204,2026-03-27,2026-04-09,2026-04-09,100,92,14.37
+2130,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-02-04,2026-02-15,2026-02-16,1000,992,31.65
+2131,Global Logistics Corp,Rulman 6204,2026-03-06,2026-03-13,2026-03-13,50,49,79.37
+2132,Global Logistics Corp,Civata M8x25,2026-02-16,2026-02-23,2026-02-23,1000,988,10.33
+2133,Apex Fasteners Inc,Sensör Kartı V2,2026-03-19,2026-03-22,2026-03-25,250,245,138.42
+2134,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-01-03,2026-01-12,2026-01-12,1000,983,116.27
+2135,Global Logistics Corp,Rulman 6204,2026-01-01,2026-01-07,2026-01-07,500,493,40.97
+2136,Global Logistics Corp,Rulman 6204,2026-01-05,2026-01-11,2026-01-11,100,99,89.51
+2137,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-03-31,2026-04-11,2026-04-18,100,97,69.05
+2138,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-14,2026-01-24,2026-01-24,100,99,100.24
+2139,Global Logistics Corp,Karton Koli 40x40,2026-01-27,2026-02-04,2026-02-04,250,245,57.58
+2140,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-01-09,2026-01-21,2026-01-22,1000,984,97.62
+2141,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-20,2026-03-24,2026-03-27,250,243,132.46
+2142,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-01-15,2026-01-22,2026-01-22,1000,980,117.41
+2143,Apex Fasteners Inc,Rulman 6204,2026-03-31,2026-04-09,2026-04-09,100,97,22.84
+2144,Global Logistics Corp,Karton Koli 40x40,2026-02-11,2026-02-20,2026-02-20,100,99,51.48
+2145,Ege Ambalaj Çözümleri,Rulman 6204,2026-03-18,2026-03-24,2026-03-24,50,48,64.83
+2146,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-02-20,2026-03-09,2026-03-16,500,471,68.46
+2147,Ege Ambalaj Çözümleri,Civata M8x25,2026-03-04,2026-03-10,2026-03-10,50,48,114.07
+2148,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-02-21,2026-03-05,2026-03-04,250,246,81.78
+2149,Global Logistics Corp,Civata M8x25,2026-01-04,2026-01-13,2026-01-13,250,245,125.67
+2150,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-01-23,2026-02-05,2026-02-05,500,488,149.29
+2151,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-01-15,2026-02-01,2026-02-08,250,244,41.42
+2152,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-12,2026-02-22,2026-02-22,100,99,74.04
+2153,Ege Ambalaj Çözümleri,Rulman 6204,2026-01-29,2026-02-09,2026-02-09,100,97,130.7
+2154,TeknoLojistik A.Ş.,Civata M8x25,2026-02-05,2026-02-22,2026-02-25,500,488,62.18
+2155,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-01-13,2026-01-20,2026-01-23,500,496,25.33
+2156,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-01,2026-02-11,2026-02-11,250,245,125.46
+2157,Ege Ambalaj Çözümleri,Rulman 6204,2026-03-12,2026-03-15,2026-03-15,250,247,131.54
+2158,Apex Fasteners Inc,Karton Koli 40x40,2026-02-28,2026-03-06,2026-03-06,50,48,140.21
+2159,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-03-27,2026-04-03,2026-04-05,1000,999,132.06
+2160,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-01-28,2026-02-06,2026-02-06,100,99,124.52
+2161,Apex Fasteners Inc,Rulman 6204,2026-03-07,2026-03-11,2026-03-11,50,49,26.22
+2162,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-02-11,2026-02-22,2026-02-22,100,94,70.51
+2163,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-14,2026-02-20,2026-02-19,500,493,34.33
+2164,TeknoLojistik A.Ş.,Rulman 6204,2026-03-03,2026-03-18,2026-03-21,100,97,76.3
+2165,Ege Ambalaj Çözümleri,Karton Koli 40x40,2026-02-26,2026-03-03,2026-03-03,500,492,114.95
+2166,Global Logistics Corp,Rulman 6204,2026-01-06,2026-01-12,2026-01-12,250,247,45.35
+2167,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-01-28,2026-02-06,2026-02-07,1000,987,129.59
+2168,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-01-28,2026-01-31,2026-02-03,250,248,48.26
+2169,TeknoLojistik A.Ş.,Karton Koli 40x40,2026-02-13,2026-02-25,2026-02-25,250,230,145.03
+2170,Apex Fasteners Inc,Sensör Kartı V2,2026-03-25,2026-03-28,2026-03-28,100,98,39.83
+2171,Ege Ambalaj Çözümleri,Plastik Enjeksiyon Gövde,2026-01-30,2026-02-02,2026-02-01,500,495,35.97
+2172,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-03,2026-03-10,2026-03-13,500,485,12.5
+2173,Global Logistics Corp,Rulman 6204,2026-03-16,2026-03-24,2026-03-24,50,49,95.02
+2174,Bursa Otomotiv Yan Sanayi,Karton Koli 40x40,2026-03-30,2026-04-09,2026-04-09,1000,983,92.64
+2175,Global Logistics Corp,Civata M8x25,2026-03-03,2026-03-10,2026-03-10,100,98,77.19
+2176,TeknoLojistik A.Ş.,Plastik Enjeksiyon Gövde,2026-01-01,2026-01-11,2026-01-11,250,236,24.69
+2177,Global Logistics Corp,Sensör Kartı V2,2026-01-27,2026-02-02,2026-02-02,500,494,58.44
+2178,Global Logistics Corp,Karton Koli 40x40,2026-03-03,2026-03-09,2026-03-09,50,49,125.43
+2179,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-18,2026-03-30,2026-03-30,100,99,125.0
+2180,Bursa Otomotiv Yan Sanayi,Plastik Enjeksiyon Gövde,2026-01-03,2026-01-11,2026-01-11,250,244,14.42
+2181,Apex Fasteners Inc,Sensör Kartı V2,2026-03-11,2026-03-17,2026-03-17,100,97,97.54
+2182,Global Logistics Corp,Sensör Kartı V2,2026-03-13,2026-03-19,2026-03-19,500,499,93.65
+2183,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-01-27,2026-02-04,2026-02-04,100,98,18.45
+2184,Global Logistics Corp,Sensör Kartı V2,2026-01-09,2026-01-18,2026-01-18,1000,990,35.5
+2185,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-03-03,2026-03-13,2026-03-16,250,244,41.98
+2186,Global Logistics Corp,Plastik Enjeksiyon Gövde,2026-02-06,2026-02-11,2026-02-12,1000,996,20.11
+2187,Ege Ambalaj Çözümleri,Civata M8x25,2026-02-20,2026-02-27,2026-02-27,1000,985,128.47
+2188,Ege Ambalaj Çözümleri,Civata M8x25,2026-02-13,2026-02-24,2026-02-24,50,48,81.96
+2189,Bursa Otomotiv Yan Sanayi,Civata M8x25,2026-01-24,2026-02-02,2026-02-02,100,98,121.01
+2190,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-03-20,2026-03-30,2026-03-31,250,247,97.22
+2191,TeknoLojistik A.Ş.,Sensör Kartı V2,2026-02-28,2026-03-11,2026-03-11,100,92,43.26
+2192,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-02-01,2026-02-11,2026-02-11,1000,978,72.34
+2193,Global Logistics Corp,Rulman 6204,2026-03-29,2026-04-06,2026-04-06,250,246,53.7
+2194,Apex Fasteners Inc,Sensör Kartı V2,2026-02-21,2026-03-06,2026-03-07,500,491,145.77
+2195,Apex Fasteners Inc,Karton Koli 40x40,2026-03-03,2026-03-14,2026-03-14,100,98,103.71
+2196,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-27,2026-03-05,2026-03-05,50,48,33.39
+2197,Apex Fasteners Inc,Sensör Kartı V2,2026-02-21,2026-03-03,2026-03-04,1000,980,119.45
+2198,Ege Ambalaj Çözümleri,Sensör Kartı V2,2026-01-12,2026-01-16,2026-01-19,250,247,25.67
+2199,Global Logistics Corp,Civata M8x25,2026-02-08,2026-02-15,2026-02-15,1000,981,99.6
