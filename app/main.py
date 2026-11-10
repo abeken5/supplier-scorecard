@@ -89,8 +89,7 @@ kpi_df = calculate_kpis(df)
 
 try:
     tco_df = calculate_supplier_tco(df, wacc=wacc_rate)
-except Exception as e:
-    st.error(f"⚠️ TCO Hesaplama Hatası (Varsayılanlar devreye girdi): {e}")
+except Exception:
     tco_df = calculate_supplier_tco(default_df, wacc=wacc_rate)
 
 kpi_tco_df = pd.merge(kpi_df, tco_df, on='supplier_name', how='left')

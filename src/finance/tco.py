@@ -23,14 +23,12 @@ def calculate_working_capital_cost(order_value, lead_time, payment_terms_days, s
     return order_value * wacc * (net_days_clamped / days)
 
 def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, demand_std=3.0, daily_delay_rate=0.001):
-    """
-    Tedarikçi Bazlı TCO Hesaplama - Tam Korumalı (Fail-Safe)
-    """
     df_temp = df.copy()
 
-    # 1. Sütun Adı Temizliği ve Alias Haritalama
-    df_temp.columns = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
-    
+    # 1. Sütun İsimlerini SAF PYTHON LİSTESİNE Çevirip Temizleme
+    cols_clean = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
+    df_temp.columns = cols_clean
+
     col_map = {
         'promised_delivery_date': 'promised_date',
         'delivery_date': 'actual_delivery_date',
@@ -41,18 +39,20 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
         'tedarikci': 'supplier_name'
     }
     df_temp = df_temp.rename(columns=col_map)
+    cols_list = list(df_temp.columns)
 
-    if 'supplier_name' not in df_temp.columns:
+    if 'supplier_name' not in cols_list:
         df_temp['supplier_name'] = 'Varsayılan Tedarikçi'
+        cols_list.append('supplier_name')
 
-    # 2. Güvenli Sayısal Dizi Çıkarıcı (KeyError Engelleme)
+    # 2. Güvenli Sayısal Dizi Çıkarıcı
     def extract_numeric_array(col_name, default_val=0.0):
-        if col_name in df_temp.columns:
+        if col_name in cols_list:
             s = df_temp[col_name].astype(str).str.replace(',', '.').str.strip()
             return pd.to_numeric(s, errors='coerce').fillna(default_val).to_numpy(dtype=float)
         return np.full(len(df_temp), default_val, dtype=float)
 
-    qty_col = 'order_units' if 'order_units' in df_temp.columns else ('order_quantity' if 'order_quantity' in df_temp.columns else df_temp.columns[0])
+    qty_col = 'order_units' if 'order_units' in cols_list else ('order_quantity' if 'order_quantity' in cols_list else cols_list[0])
 
     qty_arr = extract_numeric_array(qty_col, 1.0)
     price_arr = extract_numeric_array('unit_price', 50.0)
@@ -63,7 +63,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     rework_arr = extract_numeric_array('rework_cost_factor', 1.5)
 
     # 3. Tarih Hesaplamaları
-    if 'promised_date' in df_temp.columns and 'order_date' in df_temp.columns:
+    if 'promised_date' in cols_list and 'order_date' in cols_list:
         promised = pd.to_datetime(df_temp['promised_date'], dayfirst=True, errors='coerce')
         order_d = pd.to_datetime(df_temp['order_date'], dayfirst=True, errors='coerce')
         lead_time_days = (promised - order_d).dt.days.fillna(7.0)
@@ -71,7 +71,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     else:
         lead_time_days = np.full(len(df_temp), 7.0)
 
-    if 'actual_delivery_date' in df_temp.columns and 'promised_date' in df_temp.columns:
+    if 'actual_delivery_date' in cols_list and 'promised_date' in cols_list:
         actual = pd.to_datetime(df_temp['actual_delivery_date'], dayfirst=True, errors='coerce')
         promised = pd.to_datetime(df_temp['promised_date'], dayfirst=True, errors='coerce')
         delay_days = (actual - promised).dt.days.fillna(0.0)
@@ -82,8 +82,8 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     p_delay_arr = np.where(delay_days > 0, 0.40, 0.10)
 
     # 4. Kusurlu Miktar Hesabı
-    acc_col = 'accepted_units' if 'accepted_units' in df_temp.columns else ('accepted_quantity' if 'accepted_quantity' in df_temp.columns else None)
-    if acc_col and acc_col in df_temp.columns:
+    acc_col = 'accepted_units' if 'accepted_units' in cols_list else ('accepted_quantity' if 'accepted_quantity' in cols_list else None)
+    if acc_col and acc_col in cols_list:
         accepted_arr = extract_numeric_array(acc_col, 0.0)
         defect_qty = np.maximum(0.0, qty_arr - accepted_arr)
     else:
@@ -108,7 +108,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     df_temp['row_wacc_cost'] = wacc_cost
     df_temp['payment_terms_days'] = pay_terms_arr
 
-    if 'financial_health' not in df_temp.columns:
+    if 'financial_health' not in cols_list:
         df_temp['financial_health'] = 'B'
 
     # 6. Temiz Gruplama (Saf Pandas)
