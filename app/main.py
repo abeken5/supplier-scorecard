@@ -21,17 +21,14 @@ st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 st.title("📊 Tedarikçi Performans ve Risk Skorlama Sistemi")
 st.caption("Talep Planlama & Tedarik Zinciri Analitik Portfolyo Projesi")
 
-# PyArrow Tiplerini Saf Standart Pandas/NumPy Yapma Fonksiyonu
 def sanitize_df(df_input):
     df_clean = df_input.copy()
     df_clean.columns = df_clean.columns.astype(str).str.replace('\ufeff', '').str.strip()
     
     for col in df_clean.columns:
-        # Metin/String ise virgülleri noktaya çevir
         if df_clean[col].dtype == 'object' or str(df_clean[col].dtype).startswith('string'):
             df_clean[col] = df_clean[col].astype(str).str.replace(',', '.').str.strip()
             
-        # Sayısal dönüştürme yapmayı dene (errors='coerce' ile)
         converted = pd.to_numeric(df_clean[col], errors='coerce')
         if not converted.isna().all():
             df_clean[col] = converted.fillna(0)
@@ -107,7 +104,7 @@ pairwise_matrix = np.array([
 ])
 
 weights, cr = calculate_ahp_weights(pairwise_matrix)
-matrix = kpi_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'total_orders']].values
+matrix = np.array(kpi_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'total_orders']].values, dtype=float)
 is_benefit = [True, False, False, True]
 
 topsis_scores = calculate_topsis(matrix, weights, is_benefit)
@@ -116,9 +113,9 @@ kpi_df['Sıralama'] = kpi_df['TOPSIS Skor'].rank(ascending=False, method='min').
 
 # Üst KPI Kartları
 st.subheader("📈 Genel Tedarikçi KPI Özeti")
-cols = st.columns(len(kpi_df))
+metric_cols = st.columns(max(1, len(kpi_df)))
 for i, row in kpi_df.iterrows():
-    with cols[i]:
+    with metric_cols[i]:
         st.metric(
             label=row['supplier_name'],
             value=f"OTIF: %{row['otif_rate']:.1f}",
@@ -140,15 +137,15 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 with tab1:
     summary_df = kpi_df.sort_values(by='TOPSIS Skor', ascending=False)
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
+    c1, c2 = st.columns([2, 1])
+    with c1:
         st.subheader("Tedarikçi Sıralaması")
         st.dataframe(
             summary_df[['Sıralama', 'supplier_name', 'TOPSIS Skor', 'otif_rate', 'avg_delay_days', 'defect_rate']],
             use_container_width=True
         )
 
-    with col2:
+    with c2:
         st.subheader("🎯 AHP Tutarlılık Oranı (CR)")
         st.metric("AHP CR Değeri", f"{cr:.4f}")
         if cr < 0.10:
@@ -175,4 +172,68 @@ with tab3:
     st.subheader("🔮 Yeni Sipariş Gecikme Riski Tahmini (Lojistik Regresyon)")
     model, scaler = train_delay_model(df)
 
-    col
+    col_input1, col_input2 = st.columns(2)
+    with col_input1:
+        req_qty = st.number_input("Sipariş Miktarı", min_value=10, max_value=5000, value=250)
+    with col_input2:
+        req_lead = st.number_input("Planlanan Teslimat Süresi (Gün)", min_value=1, max_value=30, value=7)
+
+    if st.button("Risk Tahmini Yap"):
+        prob = predict_delay_risk(model, scaler, req_qty, req_lead)
+        st.write(f"Tahmini Gecikme Olasılığı: **%{prob*100:.1f}**")
+        if prob > 0.5:
+            st.error("⚠️ Yüksek Gecikme Riski!")
+        else:
+            st.success("✅ Düşük Gecikme Riski.")
+
+with tab4:
+    st.subheader("🎲 Monte Carlo Stoksuz Kalma (Stockout) Riski Simülasyonu")
+    st.caption("1.000 Gelecek Senaryosu Üzerinden Olasılıksal Tedarik Zinciri Simülasyonu")
+
+    col_mc1, col_mc2, col_mc3 = st.columns(3)
+    with col_mc1:
+        selected_supplier = st.selectbox("Tedarikçi Seçin", df['supplier_name'].unique())
+    with col_mc2:
+        current_stock = st.number_input("Mevcut Depo Stoğu (Adet)", min_value=10, max_value=5000, value=150)
+    with col_mc3:
+        daily_demand = st.number_input("Ortalama Günlük Talep (Adet/Gün)", min_value=1, max_value=500, value=15)
+
+    if st.button("Simülasyonu Çalıştır (1.000 Senaryo)"):
+        prob, simulated_demands = run_monte_carlo_stockout(df, selected_supplier, current_stock, daily_demand)
+        
+        col_res1, col_res2 = st.columns([1, 2])
+        with col_res1:
+            st.metric(label="Stok Kırılma (Stockout) Riski", value=f"%{prob*100:.1f}")
+            if prob > 0.30:
+                st.error("🚨 YÜKSEK STOK KIRILMA RİSKİ! Emniyet stoğunu artırın veya alternatif tedarikçiden sipariş açın.")
+            else:
+                st.success("✅ GÜVENLİ STOK SEVİYESİ. Mevcut stok teslimat süresini karşılamak için yeterli.")
+        
+        with col_res2:
+            st.write("📊 **1.000 Senaryodaki Tahmini Toplam Talep Dağılımı**")
+            chart_data = pd.DataFrame({'Tahmini Harcanacak Stok': simulated_demands})
+            st.bar_chart(chart_data)
+
+with tab5:
+    st.subheader("🧩 Sipariş Tahsis (Order Allocation) Öneri Motoru")
+    st.caption("TOPSIS skorları ve gecikme riski kısıtlarına göre optimum sipariş dağılımı")
+
+    total_order = st.number_input("Verilecek Toplam Sipariş Miktarı (Adet)", min_value=100, max_value=100000, value=10000, step=500)
+
+    if st.button("Optimum Tahsisi Hesapla"):
+        alloc_df = calculate_order_allocation(kpi_df, total_order)
+        
+        col_al1, col_al2 = st.columns([2, 1])
+        with col_al1:
+            st.dataframe(
+                alloc_df[['supplier_name', 'TOPSIS Skor', 'avg_delay_days', 'Allocated_Ratio', 'Allocated_Qty']].style.format({
+                    'TOPSIS Skor': '{:.4f}',
+                    'avg_delay_days': '{:.1f}',
+                    'Allocated_Ratio': '%{:.1%}'
+                }),
+                use_container_width=True
+            )
+        with col_al2:
+            st.write("📊 **Sipariş Paylaşım Grafiği**")
+            chart_alloc = alloc_df.set_index('supplier_name')['Allocated_Qty']
+            st.bar_chart(chart_alloc)
