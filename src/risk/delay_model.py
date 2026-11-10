@@ -1,11 +1,10 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from datetime import datetime
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 def safe_parse_date(date_val):
-    """Pandas C-extension hatalarını baypas eden saf Python tarih ayrıştırıcı"""
     if pd.isna(date_val) or not date_val:
         return None
     s = str(date_val).strip()
@@ -29,11 +28,9 @@ def prepare_risk_data(df):
     df_temp = df_temp.rename(columns=col_map)
     cols_list = list(df_temp.columns)
 
-    # 1. Miktar Dizi Koruması
     qty_col = 'order_units' if 'order_units' in cols_list else ('order_quantity' if 'order_quantity' in cols_list else cols_list[0])
     qty_arr = pd.to_numeric(df_temp[qty_col].astype(str).str.replace(',', '.'), errors='coerce').fillna(100.0).to_numpy(dtype=float)
 
-    # 2. Güvenli Teslimat Süresi (Lead Time) Hesaplama
     lead_time_list = []
     delay_list = []
 
@@ -61,10 +58,7 @@ def prepare_risk_data(df):
     lead_time_days = np.array(lead_time_list, dtype=float)
     delay_days = np.array(delay_list, dtype=float)
 
-    # 3. Risk Etiketi (1: Gecikme Var, 0: Zamanında)
     y = np.where(delay_days > 0, 1, 0)
-    
-    # Lojistik Regresyon için tek sınıf koruması
     if len(np.unique(y)) < 2:
         y[0] = 1 if y[0] == 0 else 0
 
