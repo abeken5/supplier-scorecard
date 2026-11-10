@@ -3,21 +3,40 @@ import numpy as np
 
 def calculate_abc_xyz(df):
     """
-    Ürün bazında ciro katkısına göre ABC ve talep oynaklığına göre XYZ analizini hesaplar.
+    Ürün bazlı ciro katkısı (ABC) ve talep değişkenliği (XYZ) analizi yapar.
     """
     df = df.copy()
-    df['total_value'] = df['order_quantity'] * df['unit_price']
+
+    # Sayısal Dönüşüm Güvencesi
+    qty_col = 'order_quantity' if 'order_quantity' in df.columns else 'order_units'
     
-    # 1. ABC Analizi (Ciro Katkısı)
-    product_abc = df.groupby('product_name').agg(
-        total_spend=('total_value', 'sum'),
-        total_orders=('order_id', 'count')
+    for col in [qty_col, 'unit_price']:
+        if col in df.columns:
+            if df[col].dtype == 'object':
+                df[col] = df[col].astype(str).str.replace(',', '.').str.strip()
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    df['total_spend'] = df[qty_col] * df['unit_price']
+
+    # Ürün Bazlı Toplam Harcama ve Talep İstatistikleri
+    product_summary = df.groupby('product_name').agg(
+        total_spend=('total_spend', 'sum'),
+        mean_demand=(qty_col, 'mean'),
+        std_demand=(qty_col, 'std')
     ).reset_index()
-    
-    product_abc = product_abc.sort_values(by='total_spend', ascending=False)
+
+    product_summary['std_demand'] = product_summary['std_demand'].fillna(0)
+
+    # 1. ABC Analizi (Ciroya Göre)
+    product_abc = product_summary.sort_values(by='total_spend', ascending=False).reset_index(drop=True)
     product_abc['cum_spend'] = product_abc['total_spend'].cumsum()
-    product_abc['cum_perc'] = product_abc['cum_spend'] / product_abc['total_spend'].sum()
+    total_spend_sum = product_abc['total_spend'].sum()
     
+    if total_spend_sum > 0:
+        product_abc['cum_perc'] = product_abc['cum_spend'] / total_spend_sum
+    else:
+        product_abc['cum_perc'] = 0
+
     def assign_abc(perc):
         if perc <= 0.70:
             return 'A'
@@ -25,35 +44,22 @@ def calculate_abc_xyz(df):
             return 'B'
         else:
             return 'C'
-            
-    product_abc['abc_class'] = product_abc['cum_perc'].apply(assign_abc)
-    
-    # 2. XYZ Analizi (Talep Oynaklığı / Değişim Katsayısı - CV)
-    # Ürün bazında sipariş miktarlarının standart sapması / ortalaması
-    product_xyz = df.groupby('product_name')['order_quantity'].agg(['mean', 'std']).reset_index()
-    product_xyz['std'] = product_xyz['std'].fillna(0)
-    product_xyz['cv'] = product_xyz['std'] / product_xyz['mean']
-    
-    def assign_xyz(cv):
-        if cv <= 0.20:
-            return 'X' # Düzenli talep
-        elif cv <= 0.50:
-            return 'Y' # Sezonluk/Orta dalgalı talep
-        else:
-            return 'Z' # Düzensiz/Yüksek dalgalı talep
-            
-    product_xyz['xyz_class'] = product_xyz['cv'].apply(assign_xyz)
-    
-    # Birleştirme
-    analysis_df = pd.merge(product_abc[['product_name', 'total_spend', 'abc_class']], 
-                           product_xyz[['product_name', 'cv', 'xyz_class']], 
-                           on='product_name')
-    
-    analysis_df['abc_xyz'] = analysis_df['abc_class'] + analysis_df['xyz_class']
-    return analysis_df
 
-if __name__ == "__main__":
-    df = pd.read_csv("data/orders.csv")
-    result = calculate_abc_xyz(df)
-    print("=== ÜRÜN ABC/XYZ ANALİZİ ===")
-    print(result[['product_name', 'total_spend', 'abc_class', 'xyz_class', 'abc_xyz']])
+    product_abc['abc_class'] = product_abc['cum_perc'].apply(assign_abc)
+
+    # 2. XYZ Analizi (Talep Değişkenliği CV = std / mean)
+    def assign_xyz(row):
+        if row['mean_demand'] == 0:
+            return 'Z'
+        cv = row['std_demand'] / row['mean_demand']
+        if cv <= 0.20:
+            return 'X'
+        elif cv <= 0.50:
+            return 'Y'
+        else:
+            return 'Z'
+
+    product_abc['xyz_class'] = product_abc.apply(assign_xyz, axis=1)
+    product_abc['abc_xyz'] = product_abc['abc_class'] + product_abc['xyz_class']
+
+    return product_abc
