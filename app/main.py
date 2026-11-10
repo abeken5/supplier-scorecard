@@ -21,15 +21,34 @@ st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 st.title("📊 Tedarikçi Performans ve Risk Skorlama Sistemi")
 st.caption("Talep Planlama & Tedarik Zinciri Analitik Portfolyo Projesi")
 
+# DataFrame Temizleme ve PyArrow Tiplerinden Arındırma Fonksiyonu
+def sanitize_df(df_input):
+    df_clean = df_input.copy()
+    # BOM ve boşluk temizliği
+    df_clean.columns = df_clean.columns.astype(str).str.replace('\ufeff', '').str.strip()
+    
+    # Standart dict ile yeniden oluşturma (PyArrow tiplerini kırar)
+    data_dict = {}
+    for col in df_clean.columns:
+        s = df_clean[col]
+        # Metin ise virgülleri noktaya çevir
+        s_str = s.astype(str).str.replace(',', '.').str.strip()
+        # Sayıya çevirmeyi dene
+        s_num = pd.to_numeric(s_str, errors='ignore')
+        data_dict[col] = s_num.to_numpy()
+        
+    return pd.DataFrame(data_dict)
+
+@st.cache_data
+def load_default_data():
+    df_raw = pd.read_csv("data/orders.csv")
+    return sanitize_df(df_raw)
+
 # Sol Panel: Veri Yükleme Alanı
 st.sidebar.header("📁 Veri Kaynağı")
 uploaded_file = st.sidebar.file_uploader("Kendi Veri Setini Yükle (CSV)", type=["csv"])
 
-@st.cache_data
-def load_default_data():
-    return pd.read_csv("data/orders.csv")
-
-# Örnek Şablon İndirme Alanı (Excel Türkçe Uyumlu UTF-8-SIG ve Noktalı Virgül)
+# Örnek Şablon İndirme Alanı
 default_df = load_default_data()
 csv_template = default_df.to_csv(index=False, sep=';', encoding='utf-8-sig').encode('utf-8-sig')
 
@@ -51,16 +70,15 @@ with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri"):
     - **promised_date**: Planlanan Teslimat Tarihi
     - **actual_delivery_date**: Gerçekleşen Teslimat Tarihi
     - **order_quantity**: Sipariş Miktarı (Adet)
-    - **delivered_quantity**: Teslim Edilen Miktar
-    - **defective_quantity**: Hatalı/Kusurlu Miktar
+    - **accepted_quantity**: Kabul Edilen Miktar
     - **unit_price**: Birim Fiyat (TL/$)
     """)
 
-# Veri Durumu Kontrolü (Noktalı Virgül, Virgül ve BOM Esnekliği)
+# Veri Durumu Kontrolü
 if uploaded_file is not None:
     try:
-        # csv okurken otomatik ayırıcı ve utf-8-sig ile BOM temizliği
-        df = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
+        raw_uploaded = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
+        df = sanitize_df(raw_uploaded)
         st.sidebar.success("✅ Özel Veri Seti Yüklendi!")
     except Exception as e:
         st.sidebar.error(f"⚠️ Dosya okuma hatası: {e}")
