@@ -25,9 +25,7 @@ def calculate_working_capital_cost(order_value, lead_time, payment_terms_days, s
 def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, demand_std=3.0, daily_delay_rate=0.001):
     df_temp = df.copy()
 
-    # 1. Sütun İsimlerini SAF PYTHON LİSTESİNE Çevirip Temizleme
-    cols_clean = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
-    df_temp.columns = cols_clean
+    df_temp.columns = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
 
     col_map = {
         'promised_delivery_date': 'promised_date',
@@ -39,31 +37,27 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
         'tedarikci': 'supplier_name'
     }
     df_temp = df_temp.rename(columns=col_map)
-    cols_list = list(df_temp.columns)
 
-    if 'supplier_name' not in cols_list:
+    if 'supplier_name' not in df_temp.columns:
         df_temp['supplier_name'] = 'Varsayılan Tedarikçi'
-        cols_list.append('supplier_name')
 
-    # 2. Güvenli Sayısal Dizi Çıkarıcı
-    def extract_numeric_array(col_name, default_val=0.0):
-        if col_name in cols_list:
+    def get_num(col_name, default_val=0.0):
+        if col_name in df_temp.columns:
             s = df_temp[col_name].astype(str).str.replace(',', '.').str.strip()
             return pd.to_numeric(s, errors='coerce').fillna(default_val).to_numpy(dtype=float)
         return np.full(len(df_temp), default_val, dtype=float)
 
-    qty_col = 'order_units' if 'order_units' in cols_list else ('order_quantity' if 'order_quantity' in cols_list else cols_list[0])
+    qty_col = 'order_units' if 'order_units' in df_temp.columns else ('order_quantity' if 'order_quantity' in df_temp.columns else df_temp.columns[0])
 
-    qty_arr = extract_numeric_array(qty_col, 1.0)
-    price_arr = extract_numeric_array('unit_price', 50.0)
-    freight_arr = extract_numeric_array('freight_cost', 150.0)
-    duty_arr = extract_numeric_array('customs_duty_rate', 0.05)
-    pay_terms_arr = extract_numeric_array('payment_terms_days', 30.0)
-    lt_std_arr = extract_numeric_array('lead_time_std', 2.0)
-    rework_arr = extract_numeric_array('rework_cost_factor', 1.5)
+    qty_arr = get_num(qty_col, 1.0)
+    price_arr = get_num('unit_price', 50.0)
+    freight_arr = get_num('freight_cost', 150.0)
+    duty_arr = get_num('customs_duty_rate', 0.05)
+    pay_terms_arr = get_num('payment_terms_days', 30.0)
+    lt_std_arr = get_num('lead_time_std', 2.0)
+    rework_arr = get_num('rework_cost_factor', 1.5)
 
-    # 3. Tarih Hesaplamaları
-    if 'promised_date' in cols_list and 'order_date' in cols_list:
+    if 'promised_date' in df_temp.columns and 'order_date' in df_temp.columns:
         promised = pd.to_datetime(df_temp['promised_date'], dayfirst=True, errors='coerce')
         order_d = pd.to_datetime(df_temp['order_date'], dayfirst=True, errors='coerce')
         lead_time_days = (promised - order_d).dt.days.fillna(7.0)
@@ -71,7 +65,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     else:
         lead_time_days = np.full(len(df_temp), 7.0)
 
-    if 'actual_delivery_date' in cols_list and 'promised_date' in cols_list:
+    if 'actual_delivery_date' in df_temp.columns and 'promised_date' in df_temp.columns:
         actual = pd.to_datetime(df_temp['actual_delivery_date'], dayfirst=True, errors='coerce')
         promised = pd.to_datetime(df_temp['promised_date'], dayfirst=True, errors='coerce')
         delay_days = (actual - promised).dt.days.fillna(0.0)
@@ -81,17 +75,15 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
 
     p_delay_arr = np.where(delay_days > 0, 0.40, 0.10)
 
-    # 4. Kusurlu Miktar Hesabı
-    acc_col = 'accepted_units' if 'accepted_units' in cols_list else ('accepted_quantity' if 'accepted_quantity' in cols_list else None)
-    if acc_col and acc_col in cols_list:
-        accepted_arr = extract_numeric_array(acc_col, 0.0)
+    acc_col = 'accepted_units' if 'accepted_units' in df_temp.columns else ('accepted_quantity' if 'accepted_quantity' in df_temp.columns else None)
+    if acc_col and acc_col in df_temp.columns:
+        accepted_arr = get_num(acc_col, 0.0)
         defect_qty = np.maximum(0.0, qty_arr - accepted_arr)
     else:
         defect_qty = np.zeros(len(df_temp))
     
     defect_rate_arr = np.where(qty_arr > 0, defect_qty / qty_arr, 0.0)
 
-    # 5. TCO Bileşenlerinin Hesabı
     landed = calculate_landed_cost(qty_arr, price_arr, freight_arr, duty_arr)
     delay_cost = calculate_expected_delay_cost(qty_arr, price_arr, p_delay_arr, delay_days, daily_delay_rate)
     quality = calculate_quality_cost(qty_arr, price_arr, defect_rate_arr, rework_arr)
@@ -100,38 +92,29 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     ss_units_arr = calculate_safety_stock(z_score, daily_demand, demand_std, lead_time_days, lt_std_arr)
     wacc_cost = calculate_working_capital_cost(order_values, lead_time_days, pay_terms_arr, ss_units_arr, price_arr, wacc)
 
-    df_temp['row_price_spend'] = order_values
-    df_temp['row_tco'] = landed + delay_cost + quality + wacc_cost
-    df_temp['row_landed'] = landed
-    df_temp['row_delay_cost'] = delay_cost
-    df_temp['row_quality_cost'] = quality
-    df_temp['row_wacc_cost'] = wacc_cost
-    df_temp['payment_terms_days'] = pay_terms_arr
+    df_temp['safe_qty'] = qty_arr
+    df_temp['safe_spend'] = order_values
+    df_temp['safe_tco'] = landed + delay_cost + quality + wacc_cost
+    df_temp['safe_landed'] = landed
+    df_temp['safe_delay_cost'] = delay_cost
+    df_temp['safe_quality_cost'] = quality
+    df_temp['safe_wacc_cost'] = wacc_cost
+    df_temp['safe_pay_terms'] = pay_terms_arr
+    df_temp['safe_fin_health'] = df_temp['financial_health'] if 'financial_health' in df_temp.columns else 'B'
 
-    if 'financial_health' not in cols_list:
-        df_temp['financial_health'] = 'B'
-
-    # 6. Temiz Gruplama (Saf Pandas)
-    summary = df_temp.groupby('supplier_name', as_index=False).agg({
-        qty_col: 'sum',
-        'row_price_spend': 'sum',
-        'row_tco': 'sum',
-        'row_landed': 'sum',
-        'row_delay_cost': 'sum',
-        'row_quality_cost': 'sum',
-        'row_wacc_cost': 'sum',
-        'payment_terms_days': 'mean',
-        'financial_health': 'first'
-    }).rename(columns={
-        qty_col: 'total_qty',
-        'row_price_spend': 'total_price_spend',
-        'row_tco': 'total_tco',
-        'row_landed': 'landed_cost',
-        'row_delay_cost': 'delay_cost',
-        'row_quality_cost': 'quality_cost',
-        'row_wacc_cost': 'wacc_cost',
-        'payment_terms_days': 'avg_payment_terms'
-    })
+    # Saf gruplama
+    gr = df_temp.groupby('supplier_name', as_index=False)
+    summary = pd.DataFrame()
+    summary['supplier_name'] = gr['supplier_name'].first()['supplier_name']
+    summary['total_qty'] = gr['safe_qty'].sum()['safe_qty']
+    summary['total_price_spend'] = gr['safe_spend'].sum()['safe_spend']
+    summary['total_tco'] = gr['safe_tco'].sum()['safe_tco']
+    summary['landed_cost'] = gr['safe_landed'].sum()['safe_landed']
+    summary['delay_cost'] = gr['safe_delay_cost'].sum()['safe_delay_cost']
+    summary['quality_cost'] = gr['safe_quality_cost'].sum()['safe_quality_cost']
+    summary['wacc_cost'] = gr['safe_wacc_cost'].sum()['safe_wacc_cost']
+    summary['avg_payment_terms'] = gr['safe_pay_terms'].mean()['safe_pay_terms']
+    summary['financial_health'] = gr['safe_fin_health'].first()['safe_fin_health']
 
     summary['unit_price_avg'] = summary['total_price_spend'] / np.maximum(1.0, summary['total_qty'])
     summary['unit_tco'] = summary['total_tco'] / np.maximum(1.0, summary['total_qty'])
