@@ -1,67 +1,80 @@
-# 📊 Tedarikçi Performans ve Risk Skorlama Sistemi (Supplier Scorecard & Risk Engine)
+# 📊 Tedarikçi Performans ve Risk Skorlama Sistemi (DSS Prototipi)
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.30%2B-red)
-![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-Logistic%20Regression-orange)
-![License](https://img.shields.io/badge/Status-Live-success)
+[![Live Demo](https://img.shields.io/badge/Streamlit-Canlı%20Demo-red?logo=streamlit)](https://supplier-scorecard-ngn7vbvuuvdvtfnsjeqmq5j.streamlit.app/#tedarikci-siralamasi)
+[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.14-blue?logo=python)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Decision%20Support%20Prototype-green)]()
 
-Bu proje, modern tedarik zinciri ve talep planlama operasyonlarında tedarikçi performansını çok kriterli karar verme (MCDM) teknikleri, makine öğrenmesi ve olasılıksal simülasyon modelleri ile uçtan uca analiz eden ve optimizasyon sağlayan **endüstriyel seviyede bir Tedarik Zinciri Kontrol Kulesi** portfolyo uygulamasıdır.
-
----
-
-## 🚀 Öne Çıkan Modüller ve Mimari
-
-Proje 5 temel analitik katmandan oluşmaktadır:
-
-### 1. 🏆 AHP & TOPSIS Çok Kriterli Skorlama (MCDM)
-* **Analitik Hiyerarşi Süreci (AHP):** Kullanıcının dinamik olarak belirlediği kriter önem derecelerine göre tutarlılık oranını ($CR < 0.10$) kontrol ederek ağırlık matrisi türetir.
-* **TOPSIS Yöntemi:** OTIF (Zamanında ve Eksiksiz Teslimat), Ortalam Gecikme Günü, Hata Oranı ve Fiyat kriterlerini İdeal Pozitif ve İdeal Negatif çözümlere olan uzaklıklarına göre vektörel normalize ederek tedarikçi sıralaması oluşturur.
-
-### 2. 📦 Ürün Bazlı ABC/XYZ Stok & Talep Analizi
-* **ABC Analizi (Ciro Katkısı):** Pareto ilkesine dayalı olarak ürünleri ciro paylarına göre A (%70), B (%20) ve C (%10) sınıflarına ayırır.
-* **XYZ Analizi (Talep Oynaklığı):** Sipariş miktarlarının Değişim Katsayısı ($CV = \sigma / \mu$) ile talebin kararlılığını (X), sezonluğunu (Y) veya düzensizliğini (Z) sınıflandırır.
-* **AX Önceliklendirmesi:** Kritik AX ürünlerini tedarik eden firmalar için gecikme toleransını dinamik olarak daraltır.
-
-### 3. 🔮 Makine Öğrenmesi ile Gecikme Riski Tahmini
-* **Lojistik Regresyon (Logistic Regression):** Geçmiş sipariş miktarları ve planlanan teslimat sürelerini (Lead Time) girdi alarak yeni bir siparişin gecikme olasılığını ($P(Delay)$) sınıflandırır.
-
-### 4. 🎲 Monte Carlo Stok Kırılma (Stockout) Simülasyonu
-* **1.000 Olasılıksal Senaryo:** Tedarikçinin teslimat süresi varyasyonunu (Normal Dağılım) simüle eder. Günlük talep ve mevcut depo stoğuna göre önümüzdeki süreçte stoksuz kalma olasılığını hesaba katar.
-
-### 5. 🧩 Dinamik Sipariş Tahsis (Order Allocation) Öneri Motoru
-* **Optimum Sipariş Bölüştürme:** TOPSIS başarı skoru yüksek ve gecikme riski düşük tedarikçilere ağırlık vererek, girilen toplam sipariş miktarını tedarikçiler arasında optimum yüzdelerle böler.
+> **Tedarikçi seçimi, gecikme riski ve sipariş tahsisi için AHP/TOPSIS, lojistik regresyon, Monte Carlo ve maliyet modellerini birleştiren bir karar destek prototipi.**
 
 ---
 
-## 🛠️ Teknoloji Yığını
-
-* **Programlama Dili:** Python
-* **Veri Analizi & İşleme:** Pandas, NumPy
-* **Makine Öğrenmesi & İstatistik:** Scikit-Learn (Logistic Regression, StandardScaler)
-* **Kullanıcı Arayüzü & Görselleştirme:** Streamlit
+## 🔗 Canlı Demo
+🚀 **Uygulamayı Canlı Deneyin:** [Supplier Scorecard & DSS App](https://supplier-scorecard-ngn7vbvuuvdvtfnsjeqmq5j.streamlit.app/#tedarikci-siralamasi)
 
 ---
 
-## 📁 Proje Yapısı
+## 💡 Çözülen İş Problemi: Fiyata Göre Seçim Neden Yanıltıcı?
+
+Geleneksel satın alma süreçlerinde tedarikçiler sıklıkla sadece **yalın birim fiyat** üzerinden değerlendirilir. Ancak en düşük teklifi veren firma; yüksek gümrük vergileri, lojistik maliyetleri, elverişsiz ödeme vadeleri (işletme sermayesi finansman yükü), kalite kusurları ve teslimat gecikmeleri eklendiğinde **en pahalı seçeneğe dönüşebilir.**
+
+Bu karar destek paneli, **Yalın Birim Fiyat** sıralaması ile **Birim TCO (Toplam Sahip Olma Maliyeti)** sıralaması arasındaki stratejik sapmayı ortaya koyarak karar vericilere objektif bir analitik katman sağlar.
+
+---
+
+## 🛠️ Metodoloji ve Modüller
+
+### 1. 💵 Toplam Sahip Olma Maliyeti (TCO) & Finansal Katman
+Tedarikçi maliyetini sadece fatura fiyatıyla değil, tüm gizli maliyet bileşenleriyle modeler:
+$$TCO = Landed\_Cost + Expected\_Delay\_Cost + Quality\_Cost + Working\_Capital\_Cost$$
+* **Landed Cost:** Satın alma fiyatı, gümrük vergisi ve navlun bedelini birleştirir.
+* **Finansal Sağlık & Vade (WACC):** Tedarikçi ödeme vadesi ve emniyet stoğunun işletme sermayesi üzerindeki yükünü Ağırlıklı Ortalama Sermaye Maliyeti (WACC) ile hesaba katar.
+
+### 2. 🏆 AHP & TOPSIS Çok Kriterli Tedarikçi Skorlama
+* **AHP (Analytic Hierarchy Process):** Kullanıcı tanımlı OTIF, Gecikme, Kalite ve TCO kriter ağırlıklarının tutarlılığını matrisel olarak doğrular. Tutarlılık Oranı $CR = \frac{CI}{RI} < 0.10$ koşulu aranır.
+* **TOPSIS:** Tedarikçileri ideal pozitif çözüme yakınlık ($C_i^*$) katsayısına göre sıralar:
+  $$C_i^* = \frac{S_i^-}{S_i^* + S_i^-}$$
+
+### 3. 📦 ABC / XYZ Stok & Talep Analizi
+Ürün gruplarını harcama hacmine (ABC) ve talep değişkenliğine (CV - XYZ) göre 9'lu matriste sınıflandırarak kritik malzeme risklerini tespit eder.
+
+### 4. 🔮 Yapay Zeka Tabanlı Gecikme Risk Tahmini
+Lojistik regresyon modeli; sipariş miktarı ve planlanan teslimat süresini girdi alarak sipariş bazlı gecikme olasılığını ($P(Gecikme)$) tahmin eder.
+
+### 5. 🎲 Monte Carlo Stoksuz Kalma (Stockout) Simülasyonu
+Tedarikçi teslimat sürelerindeki değişkenliği 1.000 senaryo üzerinden simüle ederek depodaki stok kırılma olasılığını hesaplar.
+
+---
+
+## ⚠️ Varsayımlar ve Sınırlılıklar (Limitations)
+
+Bu araç bir karar verme mercii değil, **karar destek amaçlı bir prototiptir.**
+* **Veri Yapısı:** Demo verisi DataCo Global Supply Chain veri seti baz alınarak filtrelenmiştir (1.500 sipariş). Gerçek tedarikçi performansını değil, yöntemin uygulanabilirliğini gösterir.
+* **Gecikme Modeli:** Lojistik regresyon modeli sınırlı sayıda özelliğe (miktar ve lead time) dayanır. Sınıf dengesizliği önlemleri alınmış olup AUC/ROC kalibrasyon metrikleri henüz raporlanmamıştır.
+* **TOPSIS Sıralaması (Rank Reversal):** TOPSIS metodolojisi gereği sisteme yeni bir tedarikçi eklendiğinde mevcut tedarikçilerin sıralamasında değişme (rank reversal) gözlemlenebilir.
+* **Monte Carlo Varsayımları:** Simülasyondaki teslimat süresi dağılımları teorik varsayımlara dayanır; gerçek saha entegrasyonunda tarihsel parametrik dağılımlarla uydurulmalıdır.
+* **Tahsis Motoru:** Sipariş tahsis algoritması sezgisel (heuristic) bir kısıtlı tahsis önerisidir; tam bir doğrusal/tamsayılı optimizasyon (LP/IP) çözücüsü değildir.
+* **Sektörel Kriterler:** Savunma sanayii ve havacılık sektörlerine özgü kritik kriterler (AS9100/ISO sertifikasyonu, tek kaynak riski, alt tedarikçi bağımlılığı ve ihrakat kontrolü/ITAR) henüz modele dahil edilmemiştir.
+
+---
+
+## 🏗️ Proje Mimarisi
 
 ```text
 supplier-scorecard/
 ├── app/
-│   └── main.py              # Streamlit Kullanıcı Arayüzü & Dashboard
-├── data/
-│   └── orders.csv           # Lojistik & Sipariş Veri Seti (200 Satır)
+│   └── main.py              # Streamlit kullanıcı arayüzü ve ana акış
 ├── src/
-│   ├── analytics/
-│   │   ├── abc_xyz.py       # ABC/XYZ Matris Hesaplama
-│   │   ├── allocation.py    # Sipariş Tahsis Motoru
-│   │   └── monte_carlo.py    # Monte Carlo Simülasyon Motoru
-│   ├── kpi/
-│   │   └── otif.py          # OTIF & KPI Metrikleri
-│   ├── risk/
-│   │   └── delay_model.py   # Lojistik Regresyon Risk Modeli
-│   └── scoring/
-│       ├── ahp_weights.py   # AHP Ağırlıklandırma & CR Kontrolü
-│       └── topsis.py        # TOPSIS Skorlama Algoritması
-└── requirements.txt
-
-"Gerçek kurumsal veri gizliliği (NDA) gereği demo verisi olarak endüstriyel parametrelere uygun hazırlanmış sentetik sipariş seti kullanılmaktadır. Ancak sistem mimarisi gerçek ERP (SAP/Oracle) CSV dışa aktarımlarını doğrudan işleyecek fail-safe altyapıya sahiptir."
+│   ├── kpi/                 # OTIF, Gecikme ve Hata Oranı hesaplayıcı
+│   ├── finance/             # TCO ve WACC finansal çalışma sermayesi modeli
+│   ├── scoring/             # AHP ve TOPSIS skorlama algoritmaları
+│   ├── risk/                # Sklearn Lojistik Regresyon risk tahmincisi
+│   └── analytics/           # ABC/XYZ, Monte Carlo ve Tahsis motoru
+├── data/
+│   └── orders.csv           # İşlenmiş tedarik zinciri veri seti
+├── scripts/
+│   └── convert_dataco.py    # DataCo veri seti dönüştürme script'i
+├── tests/
+│   └── test_core.py         # AHP, TOPSIS ve KPI birim testleri
+├── LICENSE                  # MIT Lisansı
+└── requirements.txt         # Bağımlılıklar
