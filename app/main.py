@@ -21,13 +21,27 @@ st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 st.title("📊 Tedarikçi Performans ve Risk Skorlama Sistemi")
 st.caption("Talep Planlama & Tedarik Zinciri Analitik Portfolyo Projesi")
 
-# Veri Yükleme
-@st.cache_data
-def load_data():
-    df = pd.read_csv("data/orders.csv")
-    return df
+# Sol Panel: Veri Yükleme Alanı
+st.sidebar.header("📁 Veri Kaynağı")
+uploaded_file = st.sidebar.file_uploader("Kendi Veri Setini Yükle (CSV)", type=["csv"])
 
-df = load_data()
+@st.cache_data
+def load_default_data():
+    return pd.read_csv("data/orders.csv")
+
+# Veri Durumu Kontrolü
+if uploaded_file is not None:
+    try:
+        df = pd.read_csv(uploaded_file)
+        st.sidebar.success("✅ Özel Veri Seti Yüklendi!")
+    except Exception as e:
+        st.sidebar.error("⚠️ Dosya okuma hatası! Varsayılan veri kullanılıyor.")
+        df = load_default_data()
+else:
+    df = load_default_data()
+    st.sidebar.info("ℹ️ Varsayılan demo veri seti aktif.")
+
+st.sidebar.markdown("---")
 
 # Sol Panel: AHP Ağırlık Seçimleri
 st.sidebar.header("⚖️ AHP Kriter Öncelikleri")
