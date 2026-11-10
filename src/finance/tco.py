@@ -25,7 +25,7 @@ def calculate_working_capital_cost(order_value, lead_time, payment_terms_days, s
 def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, demand_std=3.0, daily_delay_rate=0.001):
     df_temp = df.copy()
 
-    # 1. Sütun İsimlerini Temizleme ve Esnek Eşleştirme
+    # 1. Sütun Temizliği ve İsim Esnekliği
     df_temp.columns = df_temp.columns.astype(str).str.replace('\ufeff', '').str.strip()
     
     column_mapping = {
@@ -33,12 +33,18 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
         'delivery_date': 'actual_delivery_date',
         'defective_quantity': 'defect_units',
         'accepted_quantity': 'accepted_units',
-        'order_quantity': 'order_units'
+        'order_quantity': 'order_units',
+        'supplier': 'supplier_name',
+        'tedarikci': 'supplier_name'
     }
     df_temp = df_temp.rename(columns=column_mapping)
 
+    if 'supplier_name' not in df_temp.columns:
+        df_temp['supplier_name'] = 'Bilinmeyen Tedarikçi'
+
     # 2. Varsayılan Finansal Parametre Koruması
     default_values = {
+        'unit_price': 50.0,
         'freight_cost': 150.0,
         'customs_duty_rate': 0.05,
         'payment_terms_days': 30.0,
@@ -56,16 +62,16 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     # 3. Sayısal Dizilerin Standart Standı
     qty_col = 'order_units' if 'order_units' in df_temp.columns else ('order_quantity' if 'order_quantity' in df_temp.columns else df_temp.columns[0])
 
-    qty_arr = np.array(df_temp[qty_col].values, dtype=float)
-    price_arr = np.array(df_temp['unit_price'].values, dtype=float) if 'unit_price' in df_temp.columns else np.zeros(len(df_temp), dtype=float)
-    freight_arr = np.array(df_temp['freight_cost'].values, dtype=float)
-    duty_arr = np.array(df_temp['customs_duty_rate'].values, dtype=float)
-    pay_terms_arr = np.array(df_temp['payment_terms_days'].values, dtype=float)
-    lt_std_arr = np.array(df_temp['lead_time_std'].values, dtype=float)
-    rework_arr = np.array(df_temp['rework_cost_factor'].values, dtype=float)
+    qty_arr = pd.to_numeric(df_temp[qty_col], errors='coerce').fillna(0.0).to_numpy(dtype=float)
+    price_arr = pd.to_numeric(df_temp['unit_price'], errors='coerce').fillna(0.0).to_numpy(dtype=float)
+    freight_arr = pd.to_numeric(df_temp['freight_cost'], errors='coerce').fillna(150.0).to_numpy(dtype=float)
+    duty_arr = pd.to_numeric(df_temp['customs_duty_rate'], errors='coerce').fillna(0.05).to_numpy(dtype=float)
+    pay_terms_arr = pd.to_numeric(df_temp['payment_terms_days'], errors='coerce').fillna(30.0).to_numpy(dtype=float)
+    lt_std_arr = pd.to_numeric(df_temp['lead_time_std'], errors='coerce').fillna(2.0).to_numpy(dtype=float)
+    rework_arr = pd.to_numeric(df_temp['rework_cost_factor'], errors='coerce').fillna(1.5).to_numpy(dtype=float)
 
     # 4. Tarih ve Teslimat Süreleri Koruması
-    p_col = 'promised_date' if 'promised_date' in df_temp.columns else ('promised_delivery_date' if 'promised_delivery_date' in df_temp.columns else None)
+    p_col = 'promised_date' if 'promised_date' in df_temp.columns else None
     o_col = 'order_date' if 'order_date' in df_temp.columns else None
     a_col = 'actual_delivery_date' if 'actual_delivery_date' in df_temp.columns else None
 
@@ -90,7 +96,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     # 5. Kusurlu Miktar Koruması
     acc_col = 'accepted_units' if 'accepted_units' in df_temp.columns else ('accepted_quantity' if 'accepted_quantity' in df_temp.columns else None)
     if acc_col and acc_col in df_temp.columns:
-        defect_qty = np.maximum(0.0, qty_arr - np.array(df_temp[acc_col].values, dtype=float))
+        defect_qty = np.maximum(0.0, qty_arr - pd.to_numeric(df_temp[acc_col], errors='coerce').fillna(0.0).to_numpy(dtype=float))
     else:
         defect_qty = np.zeros(len(df_temp))
     
@@ -105,7 +111,6 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     ss_units_arr = calculate_safety_stock(z_score, daily_demand, demand_std, lead_time_days, lt_std_arr)
     wacc_cost = calculate_working_capital_cost(order_values, lead_time_days, pay_terms_arr, ss_units_arr, price_arr, wacc)
 
-    # Saf DataFrame Sütun Atamaları
     df_temp['row_price_spend'] = order_values
     df_temp['row_tco'] = landed + delay_cost + quality + wacc_cost
     df_temp['row_landed'] = landed
@@ -113,7 +118,7 @@ def calculate_supplier_tco(df, wacc=0.40, z_score=1.65, daily_demand=15.0, deman
     df_temp['row_quality_cost'] = quality
     df_temp['row_wacc_cost'] = wacc_cost
 
-    # 7. Tedarikçi Gruplaması (Lambda/Index Erişimi Kaldırıldı)
+    # 7. Tedarikçi Gruplaması
     summary = df_temp.groupby('supplier_name', as_index=False).agg(
         total_qty=(qty_col, 'sum'),
         total_price_spend=('row_price_spend', 'sum'),
