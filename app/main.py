@@ -56,14 +56,14 @@ with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri"):
     - **unit_price**: Birim Fiyat (TL/$)
     """)
 
-# Veri Durumu Kontrolü (Otomatik Ayırıcı Algılama)
+# Veri Durumu Kontrolü (Noktalı Virgül ve Virgül Esnekliği)
 if uploaded_file is not None:
     try:
-        # sep=None ve engine='python' ile hem virgül hem noktalı virgül otomatik algılanır
+        # csv okurken hem virgül hem noktalı virgül (;) için otomatik algılama
         df = pd.read_csv(uploaded_file, sep=None, engine='python')
         st.sidebar.success("✅ Özel Veri Seti Yüklendi!")
     except Exception as e:
-        st.sidebar.error("⚠️ Dosya okuma hatası! Varsayılan veri kullanılıyor.")
+        st.sidebar.error(f"⚠️ Dosya okuma hatası: {e}")
         df = default_df
 else:
     df = default_df
