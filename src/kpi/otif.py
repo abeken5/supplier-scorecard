@@ -4,75 +4,77 @@ import numpy as np
 def calculate_kpis(df):
     """
     Sipariş veri setinden tedarikçi bazlı OTIF, Ortalama Gecikme ve Hata Oranı KPI'larını hesaplar.
-    Kurşun Geçirmez Yapı: KeyError ihtimali %0'dır.
+    %100 Garantili ve Saf Pandas Dizin Çözümü.
     """
     df_temp = df.copy()
 
     # 1. Sütun Temizliği ve Alias Haritalama
-    cols_clean = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
-    df_temp.columns = cols_clean
+    df_temp.columns = [str(c).replace('\ufeff', '').strip() for c in df_temp.columns]
 
-    col_map = {
+    mapping = {
+        'supplier': 'supplier_name',
+        'tedarikci': 'supplier_name',
         'promised_delivery_date': 'promised_date',
         'delivery_date': 'actual_delivery_date',
-        'defective_quantity': 'defect_units',
-        'accepted_quantity': 'accepted_units',
         'order_quantity': 'order_units',
-        'supplier': 'supplier_name',
-        'tedarikci': 'supplier_name'
+        'accepted_quantity': 'accepted_units',
+        'defective_quantity': 'defect_units'
     }
-    df_temp = df_temp.rename(columns=col_map)
-    cols_list = list(df_temp.columns)
+    df_temp = df_temp.rename(columns=mapping)
 
-    if 'supplier_name' not in cols_list:
-        df_temp['supplier_name'] = 'Bilinmeyen Tedarikçi'
-        cols_list.append('supplier_name')
+    if 'supplier_name' not in df_temp.columns:
+        df_temp['supplier_name'] = 'Varsayılan Tedarikçi'
+
+    n = len(df_temp)
 
     # 2. Güvenli Sayısal Dizi Çıkarıcı
-    def extract_num(col_name, default_val=0.0):
-        if col_name in cols_list:
-            s = df_temp[col_name].astype(str).str.replace(',', '.').str.strip()
-            return pd.to_numeric(s, errors='coerce').fillna(default_val).to_numpy(dtype=float)
-        return np.full(len(df_temp), default_val, dtype=float)
+    def get_arr(col, default=0.0):
+        if col in df_temp.columns:
+            s = df_temp[col].astype(str).str.replace(',', '.').str.strip()
+            return pd.to_numeric(s, errors='coerce').fillna(default).to_numpy(dtype=float)
+        return np.full(n, default, dtype=float)
 
-    qty_col = 'order_units' if 'order_units' in cols_list else ('order_quantity' if 'order_quantity' in cols_list else cols_list[0])
+    qty_col = 'order_units' if 'order_units' in df_temp.columns else df_temp.columns[0]
+    qty_arr = get_arr(qty_col, 1.0)
+    acc_arr = get_arr('accepted_units', 1.0)
+    defect_arr = get_arr('defect_units', -1.0)
 
-    qty_arr = extract_num(qty_col, 1.0)
-    acc_arr = extract_num('accepted_units', 1.0)
+    # Eksikse hesapla
+    defect_arr = np.where(defect_arr < 0, np.maximum(0.0, qty_arr - acc_arr), defect_arr)
 
-    if 'defect_units' in cols_list:
-        defect_arr = extract_num('defect_units', 0.0)
-    else:
-        defect_arr = np.maximum(0.0, qty_arr - acc_arr)
-
-    # 3. Tarih Hesaplamaları
-    if 'promised_date' in cols_list and 'actual_delivery_date' in cols_list:
+    # 3. Tarih ve Gecikme
+    if 'promised_date' in df_temp.columns and 'actual_delivery_date' in df_temp.columns:
         promised = pd.to_datetime(df_temp['promised_date'], dayfirst=True, errors='coerce')
         actual = pd.to_datetime(df_temp['actual_delivery_date'], dayfirst=True, errors='coerce')
-        delay_days = (actual - promised).dt.days.fillna(0.0)
-        delay_days = np.maximum(0.0, delay_days.values)
+        delay_days = (actual - promised).dt.days.fillna(0.0).to_numpy(dtype=float)
+        delay_days = np.maximum(0.0, delay_days)
     else:
-        delay_days = np.zeros(len(df_temp))
+        delay_days = np.zeros(n, dtype=float)
 
-    # 4. Geçici Hesaplama Sütunları
-    df_temp['safe_order_id'] = 1
-    df_temp['safe_delay_days'] = delay_days
-    df_temp['safe_defect_units'] = defect_arr
-    df_temp['safe_order_qty'] = qty_arr
+    is_on_time = (delay_days == 0).astype(float)
+    is_perfect = (defect_arr == 0).astype(float)
+    is_otif = is_on_time * is_perfect
 
-    is_on_time = delay_days == 0
-    is_perfect = defect_arr == 0
-    df_temp['safe_is_otif'] = np.where(is_on_time & is_perfect, 1.0, 0.0)
+    # 4. Saf ve Temiz İki Boyutlu DataFrame
+    clean_df = pd.DataFrame({
+        'supplier_name': df_temp['supplier_name'].astype(str),
+        'order_cnt': np.ones(n, dtype=float),
+        'otif_cnt': is_otif,
+        'delay': delay_days,
+        'defects': defect_arr,
+        'qty': qty_arr
+    })
 
-    # 5. Gruplama (Saf Temiz Sütunlar)
-    summary = df_temp.groupby('supplier_name', as_index=False).agg(
-        total_orders=('safe_order_id', 'count'),
-        otif_count=('safe_is_otif', 'sum'),
-        avg_delay_days=('safe_delay_days', 'mean'),
-        total_defects=('safe_defect_units', 'sum'),
-        total_qty=('safe_order_qty', 'sum')
-    )
+    # 5. Sözlük Bazlı Basit Gruplama
+    summary = clean_df.groupby('supplier_name', as_index=False).agg({
+        'order_cnt': 'sum',
+        'otif_cnt': 'sum',
+        'delay': 'mean',
+        'defects': 'sum',
+        'qty': 'sum'
+    })
 
+    summary.columns = ['supplier_name', 'total_orders', 'otif_count', 'avg_delay_days', 'total_defects', 'total_qty']
     summary['otif_rate'] = (summary['otif_count'] / np.maximum(1.0, summary['total_orders'])) * 100.0
     summary['defect_rate'] = np.where(summary['total_qty'] > 0, (summary['total_defects'] / summary['total_qty']) * 100.0, 0.0)
 
