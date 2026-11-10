@@ -15,11 +15,12 @@ from src.risk.delay_model import train_delay_model, predict_delay_risk
 from src.analytics.abc_xyz import calculate_abc_xyz
 from src.analytics.monte_carlo import run_monte_carlo_stockout
 from src.analytics.allocation import calculate_order_allocation
+from src.finance.tco import calculate_supplier_tco
 
 st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 
 st.title("📊 Tedarikçi Performans ve Risk Skorlama Sistemi")
-st.caption("Talep Planlama & Tedarik Zinciri Analitik Portfolyo Projesi")
+st.caption("Talep Planlama & Tedarik Zinciri Analitik Karar Destek Sistemi (DSS)")
 
 def sanitize_df(df_input):
     df_clean = df_input.copy()
@@ -58,24 +59,25 @@ st.sidebar.download_button(
 
 with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri"):
     st.markdown("""
-    Yükleyeceğiniz CSV dosyasında şu sütunlar bulunmalıdır:
-    - **order_id**: Sipariş Numarası
-    - **supplier_name**: Tedarikçi Adı
-    - **product_name**: Ürün Adı
-    - **order_date**: Sipariş Tarihi (YYYY-AA-GG)
-    - **promised_date**: Planlanan Teslimat Tarihi
-    - **actual_delivery_date**: Gerçekleşen Teslimat Tarihi
-    - **order_quantity**: Sipariş Miktarı (Adet)
-    - **accepted_quantity**: Kabul Edilen Miktar
-    - **unit_price**: Birim Fiyat (TL/$)
+    Yükleyeceğiniz CSV dosyasında varsayılan veya ek olarak şu sütunlar kullanılabilir:
+    - **Sipariş Detayı**: order_id, supplier_name, product_name, order_date, promised_date, actual_delivery_date, order_quantity, accepted_quantity, unit_price
+    - **Finansal Detaylar (Opsiyonel)**: freight_cost, customs_duty_rate, payment_terms_days, lead_time_std, rework_cost_factor, financial_health
     """)
 
-# Veri Durumu Kontrolü
+# Veri Durumu ve Fail-Safe Kontrolü
+has_financial_columns = False
 if uploaded_file is not None:
     try:
         raw_uploaded = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
         df = sanitize_df(raw_uploaded)
         st.sidebar.success("✅ Özel Veri Seti Yüklendi!")
+        
+        fin_cols = ['freight_cost', 'customs_duty_rate', 'payment_terms_days']
+        if any(c in df.columns for c in fin_cols):
+            has_financial_columns = True
+            st.sidebar.info("💡 Özel Finansal Parametreler Algılandı.")
+        else:
+            st.sidebar.warning("⚠️ TCO, varsayılan finansal parametrelerle hesaplandı.")
     except Exception as e:
         st.sidebar.error(f"⚠️ Dosya okuma hatası: {e}")
         df = default_df
@@ -85,15 +87,26 @@ else:
 
 st.sidebar.markdown("---")
 
+# Sol Panel: Finansal Sermaye Maliyeti (WACC) Slider'ı
+st.sidebar.header("💰 İşletme Sermayesi Ayarları")
+wacc_rate = st.sidebar.slider("Ağırlıklı Ortalama Sermaye Maliyeti (WACC %)", min_value=10, max_value=80, value=40, step=5) / 100.0
+st.sidebar.caption("Not: Yüksek enflasyon/faiz ortamında işletme sermayesi finansman maliyetini simüle eder.")
+
+st.sidebar.markdown("---")
+
 # Sol Panel: AHP Ağırlık Seçimleri
 st.sidebar.header("⚖️ AHP Kriter Öncelikleri")
 w_otif = st.sidebar.slider("OTIF Önemi", 1, 9, 5)
 w_delay = st.sidebar.slider("Gecikme Günü Önemi", 1, 9, 3)
 w_defect = st.sidebar.slider("Hata Oranı Önemi", 1, 9, 2)
-w_price = st.sidebar.slider("Fiyat Önemi", 1, 9, 1)
+w_price = st.sidebar.slider("Fiyat / TCO Önemi", 1, 9, 1)
 
-# KPI Hesaplama
+# KPI & TCO Hesaplama
 kpi_df = calculate_kpis(df)
+tco_df = calculate_supplier_tco(df, wacc=wacc_rate)
+
+# KPI ile TCO Verilerini Birleştirme
+kpi_tco_df = pd.merge(kpi_df, tco_df, on='supplier_name', how='left')
 
 # AHP & TOPSIS Hesaplaması (Global)
 pairwise_matrix = np.array([
@@ -104,29 +117,33 @@ pairwise_matrix = np.array([
 ])
 
 weights, cr = calculate_ahp_weights(pairwise_matrix)
-matrix = np.array(kpi_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'total_orders']].values, dtype=float)
-is_benefit = [True, False, False, True]
+matrix = np.array(kpi_tco_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'unit_tco']].values, dtype=float)
+is_benefit = [True, False, False, False] # Birim TCO düştükçe puan artar (Cost criterion)
 
 topsis_scores = calculate_topsis(matrix, weights, is_benefit)
-kpi_df['TOPSIS Skor'] = topsis_scores
-kpi_df['Sıralama'] = kpi_df['TOPSIS Skor'].rank(ascending=False, method='min').fillna(0).astype(int)
+kpi_tco_df['TOPSIS Skor'] = topsis_scores
+kpi_tco_df['TCO_Sıralama'] = kpi_tco_df['TOPSIS Skor'].rank(ascending=False, method='min').fillna(0).astype(int)
+
+# Sadece Birim Fiyata Göre Sıralama (Karşılaştırma İçin)
+kpi_tco_df['Fiyat_Sıralaması'] = kpi_tco_df['unit_price_avg'].rank(ascending=True, method='min').astype(int)
 
 # Üst KPI Kartları
-st.subheader("📈 Genel Tedarikçi KPI Özeti")
-metric_cols = st.columns(max(1, len(kpi_df)))
-for i, row in kpi_df.iterrows():
+st.subheader("📈 Genel Tedarikçi KPI & TCO Özeti")
+metric_cols = st.columns(max(1, len(kpi_tco_df)))
+for i, row in kpi_tco_df.iterrows():
     with metric_cols[i]:
         st.metric(
-            label=row['supplier_name'],
-            value=f"OTIF: %{row['otif_rate']:.1f}",
-            delta=f"Gecikme: {row['avg_delay_days']:.1f} Gün",
+            label=f"{row['supplier_name']} ({row.get('financial_health', 'B')})",
+            value=f"Birim TCO: {row['unit_tco']:.2f} ₺",
+            delta=f"Fiyat Farkı: +%{row['tco_premium_perc']:.1f}",
             delta_color="inverse"
         )
 
 st.markdown("---")
 
 # Sekme Mimarisi
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+    "💵 Fiyat vs TCO (Aha! Tablosu)",
     "🏆 TOPSIS & Skorlama", 
     "📦 ABC/XYZ Stok & Talep Analizi", 
     "🔮 Risk Tahmini",
@@ -135,13 +152,64 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 with tab1:
-    summary_df = kpi_df.sort_values(by='TOPSIS Skor', ascending=False)
+    st.subheader("💡 Yönetici Özeti: Yalın Birim Fiyat vs. Toplam Sahip Olma Maliyeti (TCO)")
+    st.caption("En ucuz teklifi veren tedarikçi; gizli lojistik, gümrük, kalite ve sermaye finansman maliyetleri eklendiğinde en pahalı seçeneğe dönüşebilir.")
+    
+    comp_df = kpi_tco_df.sort_values(by='unit_price_avg', ascending=True).copy()
+    
+    col_tco1, col_tco2 = st.columns([2, 1])
+    with col_tco1:
+        # Karşılaştırmalı Tablo
+        display_comp = comp_df[[
+            'supplier_name', 'Fiyat_Sıralaması', 'unit_price_avg', 
+            'TCO_Sıralama', 'unit_tco', 'tco_premium_perc', 
+            'avg_payment_terms', 'financial_health'
+        ]].rename(columns={
+            'supplier_name': 'Tedarikçi',
+            'Fiyat_Sıralaması': 'Fiyat Sırası',
+            'unit_price_avg': 'Birim Fiyat (₺)',
+            'TCO_Sıralama': 'TCO Sırası',
+            'unit_tco': 'Birim TCO (₺)',
+            'tco_premium_perc': 'Gizli Maliyet Yükü (%)',
+            'avg_payment_terms': 'Vade (Gün)',
+            'financial_health': 'Finansal Sağlık'
+        })
+        st.dataframe(display_comp, use_container_width=True)
+
+    with col_tco2:
+        # Otomatik Yönetici Notu Üretimi
+        top_price_supp = comp_df.iloc[0]
+        top_tco_supp = kpi_tco_df.sort_values(by='unit_tco', ascending=True).iloc[0]
+        
+        st.info("📌 **Yönetici Çıkarım Raporu:**")
+        if top_price_supp['supplier_name'] != top_tco_supp['supplier_name']:
+            st.warning(
+                f"🚨 **Stratejik Karar Çelişkisi!**\n\n"
+                f"Yalın birim fiyata göre 1. sırada yer alan **{top_price_supp['supplier_name']}** ({top_price_supp['unit_price_avg']:.2f} ₺), "
+                f"gizli lojistik, kalite ve sermaye maliyetleri eklendiğinde **Birim TCO'da {top_price_supp['TCO_Sıralama']}. sıraya** gerilemiştir.\n\n"
+                f"🎯 **Tavsiye:** Gerçek TCO bazında en verimli tedarikçi **{top_tco_supp['supplier_name']}** ({top_tco_supp['unit_tco']:.2f} ₺) firmasıdır."
+            )
+        else:
+            st.success(
+                f"✅ **Karar Hizalanması:**\n\n"
+                f"**{top_price_supp['supplier_name']}** hem en düşük birim fiyatı ({top_price_supp['unit_price_avg']:.2f} ₺) "
+                f"hem de en düşük Birim TCO'yu ({top_price_supp['unit_tco']:.2f} ₺) sunarak her iki sıralamada da 1. sıradadır."
+            )
+
+    st.markdown("---")
+    st.markdown("""
+    > ⚖️ **Muhasebe & Vergi Notu:** Landed cost hesaplamasında indirilebilir KDV maliyet unsuruna dahil edilmemiş, gümrük vergisi ise ithalat maliyetine eklenmiştir.
+    > 📑 **Veri Notu:** Demo veri sentetiktir. Parametreler örnek işletme değerleridir.
+    """)
+
+with tab2:
+    summary_df = kpi_tco_df.sort_values(by='TOPSIS Skor', ascending=False)
 
     c1, c2 = st.columns([2, 1])
     with c1:
-        st.subheader("Tedarikçi Sıralaması")
+        st.subheader("Tedarikçi Sıralaması (TOPSIS)")
         st.dataframe(
-            summary_df[['Sıralama', 'supplier_name', 'TOPSIS Skor', 'otif_rate', 'avg_delay_days', 'defect_rate']],
+            summary_df[['TCO_Sıralama', 'supplier_name', 'TOPSIS Skor', 'unit_tco', 'otif_rate', 'avg_delay_days', 'defect_rate']],
             use_container_width=True
         )
 
@@ -153,7 +221,7 @@ with tab1:
         else:
             st.warning("⚠️ Kriter ağırlıkları tutarsız.")
 
-with tab2:
+with tab3:
     st.subheader("📌 Ürün Bazlı ABC/XYZ Matrisi")
     st.caption("A: Yüksek Ciro (%70), B: Orta Ciro (%20), C: Düşük Ciro (%10) | X: Kararlı Talep, Y: Sezonluk, Z: Düşük/Düzensiz Talep")
     
@@ -168,7 +236,7 @@ with tab2:
     with col_abc2:
         st.info("💡 **Talep Planlama Notu:** AX sınıfı ürünleri tedarik eden firmaların gecikme yapmaması kritik önem taşır.")
 
-with tab3:
+with tab4:
     st.subheader("🔮 Yeni Sipariş Gecikme Riski Tahmini (Lojistik Regresyon)")
     model, scaler = train_delay_model(df)
 
@@ -186,7 +254,7 @@ with tab3:
         else:
             st.success("✅ Düşük Gecikme Riski.")
 
-with tab4:
+with tab5:
     st.subheader("🎲 Monte Carlo Stoksuz Kalma (Stockout) Riski Simülasyonu")
     st.caption("1.000 Gelecek Senaryosu Üzerinden Olasılıksal Tedarik Zinciri Simülasyonu")
 
@@ -214,14 +282,14 @@ with tab4:
             chart_data = pd.DataFrame({'Tahmini Harcanacak Stok': simulated_demands})
             st.bar_chart(chart_data)
 
-with tab5:
+with tab6:
     st.subheader("🧩 Sipariş Tahsis (Order Allocation) Öneri Motoru")
     st.caption("TOPSIS skorları ve gecikme riski kısıtlarına göre optimum sipariş dağılımı")
 
     total_order = st.number_input("Verilecek Toplam Sipariş Miktarı (Adet)", min_value=100, max_value=100000, value=10000, step=500)
 
     if st.button("Optimum Tahsisi Hesapla"):
-        alloc_df = calculate_order_allocation(kpi_df, total_order)
+        alloc_df = calculate_order_allocation(kpi_tco_df, total_order)
         
         col_al1, col_al2 = st.columns([2, 1])
         with col_al1:
