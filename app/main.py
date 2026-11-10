@@ -14,6 +14,7 @@ from src.scoring.topsis import calculate_topsis
 from src.risk.delay_model import train_delay_model, predict_delay_risk
 from src.analytics.abc_xyz import calculate_abc_xyz
 from src.analytics.monte_carlo import run_monte_carlo_stockout
+from src.analytics.allocation import calculate_order_allocation
 
 st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 
@@ -38,6 +39,22 @@ w_price = st.sidebar.slider("Fiyat Önemi", 1, 9, 1)
 # KPI Hesaplama
 kpi_df = calculate_kpis(df)
 
+# AHP & TOPSIS Hesaplaması (Global)
+pairwise_matrix = np.array([
+    [1.0,           w_otif/w_delay, w_otif/w_defect, w_otif/w_price],
+    [w_delay/w_otif, 1.0,           w_delay/w_defect, w_delay/w_price],
+    [w_defect/w_otif, w_defect/w_delay, 1.0,          w_defect/w_price],
+    [w_price/w_otif,  w_price/w_delay,  w_price/w_defect,  1.0]
+])
+
+weights, cr = calculate_ahp_weights(pairwise_matrix)
+matrix = kpi_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'total_orders']].values
+is_benefit = [True, False, False, True]
+
+topsis_scores = calculate_topsis(matrix, weights, is_benefit)
+kpi_df['TOPSIS Skor'] = topsis_scores
+kpi_df['Sıralama'] = kpi_df['TOPSIS Skor'].rank(ascending=False, method='min').fillna(0).astype(int)
+
 # Üst KPI Kartları
 st.subheader("📈 Genel Tedarikçi KPI Özeti")
 cols = st.columns(len(kpi_df))
@@ -53,30 +70,15 @@ for i, row in kpi_df.iterrows():
 st.markdown("---")
 
 # Sekme Mimarisi
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🏆 TOPSIS & Skorlama", 
     "📦 ABC/XYZ Stok & Talep Analizi", 
     "🔮 Risk Tahmini",
-    "🎲 Monte Carlo Stok Simülasyonu"
+    "🎲 Monte Carlo Stok Simülasyonu",
+    "🧩 Sipariş Tahsis Önerisi"
 ])
 
 with tab1:
-    pairwise_matrix = np.array([
-        [1.0,           w_otif/w_delay, w_otif/w_defect, w_otif/w_price],
-        [w_delay/w_otif, 1.0,           w_delay/w_defect, w_delay/w_price],
-        [w_defect/w_otif, w_defect/w_delay, 1.0,          w_defect/w_price],
-        [w_price/w_otif,  w_price/w_delay,  w_price/w_defect,  1.0]
-    ])
-
-    weights, cr = calculate_ahp_weights(pairwise_matrix)
-
-    matrix = kpi_df[['otif_rate', 'avg_delay_days', 'defect_rate', 'total_orders']].values
-    is_benefit = [True, False, False, True]
-
-    topsis_scores = calculate_topsis(matrix, weights, is_benefit)
-    kpi_df['TOPSIS Skor'] = topsis_scores
-
-    kpi_df['Sıralama'] = kpi_df['TOPSIS Skor'].rank(ascending=False, method='min').fillna(0).astype(int)
     summary_df = kpi_df.sort_values(by='TOPSIS Skor', ascending=False)
 
     col1, col2 = st.columns([2, 1])
@@ -97,7 +99,7 @@ with tab1:
 
 with tab2:
     st.subheader("📌 Ürün Bazlı ABC/XYZ Matrisi")
-    st.caption("A: Yüksek Ciro (%70), B: Orta Ciro (%20), C: Düşük Ciro (%10) | X: Kararlı Talep, Y: Sezonluk, Z: Düzensiz Talep")
+    st.caption("A: Yüksek Ciro (%70), B: Orta Ciro (%20), C: Düşük Ciro (%10) | X: Kararlı Talep, Y: Sezonluk, Z: Düşük/Düzensiz Talep")
     
     abc_xyz_df = calculate_abc_xyz(df)
     
@@ -155,3 +157,27 @@ with tab4:
             st.write("📊 **1.000 Senaryodaki Tahmini Toplam Talep Dağılımı**")
             chart_data = pd.DataFrame({'Tahmini Harcanacak Stok': simulated_demands})
             st.bar_chart(chart_data)
+
+with tab5:
+    st.subheader("🧩 Sipariş Tahsis (Order Allocation) Öneri Motoru")
+    st.caption("TOPSIS skorları ve gecikme riski kısıtlarına göre optimum sipariş dağılımı")
+
+    total_order = st.number_input("Verilecek Toplam Sipariş Miktarı (Adet)", min_value=100, max_value=100000, value=10000, step=500)
+
+    if st.button("Optimum Tahsisi Hesapla"):
+        alloc_df = calculate_order_allocation(kpi_df, total_order)
+        
+        col_al1, col_al2 = st.columns([2, 1])
+        with col_al1:
+            st.dataframe(
+                alloc_df[['supplier_name', 'TOPSIS Skor', 'avg_delay_days', 'Allocated_Ratio', 'Allocated_Qty']].style.format({
+                    'TOPSIS Skor': '{:.4f}',
+                    'avg_delay_days': '{:.1f}',
+                    'Allocated_Ratio': '%{:.1%}'
+                }),
+                use_container_width=True
+            )
+        with col_al2:
+            st.write("📊 **Sipariş Paylaşım Grafiği**")
+            chart_alloc = alloc_df.set_index('supplier_name')['Allocated_Qty']
+            st.bar_chart(chart_alloc)
