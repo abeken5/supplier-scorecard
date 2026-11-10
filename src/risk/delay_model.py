@@ -1,7 +1,20 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+
+def safe_parse_date(date_val):
+    """Pandas C-extension hatalarını baypas eden saf Python tarih ayrıştırıcı"""
+    if pd.isna(date_val) or not date_val:
+        return None
+    s = str(date_val).strip()
+    for fmt in ('%d.%m.%Y', '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y'):
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    return None
 
 def prepare_risk_data(df):
     df_temp = df.copy()
@@ -16,43 +29,44 @@ def prepare_risk_data(df):
     df_temp = df_temp.rename(columns=col_map)
     cols_list = list(df_temp.columns)
 
-    # 1. Sayısal Sipariş Miktarı
+    # 1. Miktar Dizi Koruması
     qty_col = 'order_units' if 'order_units' in cols_list else ('order_quantity' if 'order_quantity' in cols_list else cols_list[0])
     qty_arr = pd.to_numeric(df_temp[qty_col].astype(str).str.replace(',', '.'), errors='coerce').fillna(100.0).to_numpy(dtype=float)
 
-    # 2. Güvenli Tarih Dönüşümü (format='%d.%m.%Y' veya esnek parse ileValueError engelleme)
-    if 'promised_date' in cols_list and 'order_date' in cols_list:
-        promised = pd.to_datetime(df_temp['promised_date'].astype(str), format='%d.%m.%Y', errors='coerce')
-        if promised.isna().all():
-            promised = pd.to_datetime(df_temp['promised_date'].astype(str), dayfirst=True, errors='coerce')
-        
-        order_d = pd.to_datetime(df_temp['order_date'].astype(str), format='%d.%m.%Y', errors='coerce')
-        if order_d.isna().all():
-            order_d = pd.to_datetime(df_temp['order_date'].astype(str), dayfirst=True, errors='coerce')
+    # 2. Güvenli Teslimat Süresi (Lead Time) Hesaplama
+    lead_time_list = []
+    delay_list = []
 
-        lead_time_days = (promised - order_d).dt.days.fillna(7.0)
-        lead_time_days = np.maximum(1.0, lead_time_days.values)
-    else:
-        lead_time_days = np.full(len(df_temp), 7.0)
+    has_promised = 'promised_date' in cols_list
+    has_order = 'order_date' in cols_list
+    has_actual = 'actual_delivery_date' in cols_list
 
-    if 'actual_delivery_date' in cols_list and 'promised_date' in cols_list:
-        actual = pd.to_datetime(df_temp['actual_delivery_date'].astype(str), format='%d.%m.%Y', errors='coerce')
-        if actual.isna().all():
-            actual = pd.to_datetime(df_temp['actual_delivery_date'].astype(str), dayfirst=True, errors='coerce')
-            
-        promised = pd.to_datetime(df_temp['promised_date'].astype(str), format='%d.%m.%Y', errors='coerce')
-        if promised.isna().all():
-            promised = pd.to_datetime(df_temp['promised_date'].astype(str), dayfirst=True, errors='coerce')
+    for _, row in df_temp.iterrows():
+        p_date = safe_parse_date(row.get('promised_date')) if has_promised else None
+        o_date = safe_parse_date(row.get('order_date')) if has_order else None
+        a_date = safe_parse_date(row.get('actual_delivery_date')) if has_actual else None
 
-        delay_days = (actual - promised).dt.days.fillna(0.0)
-        delay_days = np.maximum(0.0, delay_days.values)
-    else:
-        delay_days = np.zeros(len(df_temp))
+        if p_date and o_date:
+            lt_days = (p_date - o_date).days
+            lead_time_list.append(max(1.0, float(lt_days)))
+        else:
+            lead_time_list.append(7.0)
 
-    # Gecikme Var mı? (1/0)
+        if a_date and p_date:
+            d_days = (a_date - p_date).days
+            delay_list.append(max(0.0, float(d_days)))
+        else:
+            delay_list.append(0.0)
+
+    lead_time_days = np.array(lead_time_list, dtype=float)
+    delay_days = np.array(delay_list, dtype=float)
+
+    # 3. Risk Etiketi (1: Gecikme Var, 0: Zamanında)
     y = np.where(delay_days > 0, 1, 0)
+    
+    # Lojistik Regresyon için tek sınıf koruması
     if len(np.unique(y)) < 2:
-        y[0] = 1  # Lojistik regresyon eğitimi için çift sınıf şartı
+        y[0] = 1 if y[0] == 0 else 0
 
     X = np.column_stack([qty_arr, lead_time_days])
     return X, y
