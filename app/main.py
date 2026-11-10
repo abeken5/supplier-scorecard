@@ -29,6 +29,33 @@ uploaded_file = st.sidebar.file_uploader("Kendi Veri Setini Yükle (CSV)", type=
 def load_default_data():
     return pd.read_csv("data/orders.csv")
 
+# Örnek Şablon İndirme Alanı
+default_df = load_default_data()
+csv_template = default_df.to_csv(index=False).encode('utf-8')
+
+st.sidebar.download_button(
+    label="📥 Örnek Şablonu İndir (CSV)",
+    data=csv_template,
+    file_name="ornek_tedarikci_verisi.csv",
+    mime="text/csv",
+    help="Kendi verinizi bu CSV formatına uygun olarak yükleyebilirsiniz."
+)
+
+with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri"):
+    st.markdown("""
+    Yükleyeceğiniz CSV dosyasında şu sütunlar bulunmalıdır:
+    - **order_id**: Sipariş Numarası
+    - **supplier_name**: Tedarikçi Adı
+    - **product_name**: Ürün Adı
+    - **order_date**: Sipariş Tarihi (YYYY-AA-GG)
+    - **promised_date**: Planlanan Teslimat Tarihi
+    - **actual_delivery_date**: Gerçekleşen Teslimat Tarihi
+    - **order_quantity**: Sipariş Miktarı (Adet)
+    - **delivered_quantity**: Teslim Edilen Miktar
+    - **defective_quantity**: Hatalı/Kusurlu Miktar
+    - **unit_price**: Birim Fiyat (TL/$)
+    """)
+
 # Veri Durumu Kontrolü
 if uploaded_file is not None:
     try:
@@ -36,9 +63,9 @@ if uploaded_file is not None:
         st.sidebar.success("✅ Özel Veri Seti Yüklendi!")
     except Exception as e:
         st.sidebar.error("⚠️ Dosya okuma hatası! Varsayılan veri kullanılıyor.")
-        df = load_default_data()
+        df = default_df
 else:
-    df = load_default_data()
+    df = default_df
     st.sidebar.info("ℹ️ Varsayılan demo veri seti aktif.")
 
 st.sidebar.markdown("---")
