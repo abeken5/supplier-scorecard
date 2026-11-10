@@ -1,6 +1,6 @@
 # 📊 Tedarikçi Performans ve Risk Skorlama Sistemi (DSS Prototipi)
 
-[![Live Demo](https://supplier-scorecard-ngn7vbvuuvdvftnejemq5j.streamlit.app/#tedarikci-siralamasi)](https://supplier-scorecard-ngn7vbvuuvdvtfnsjeqmq5j.streamlit.app/)
+[![Live Demo](https://supplier-scorecard-ngn7vbvuuvdvftnejemq5j.streamlit.app/#tedarikci-siralamasi)
 
 > **Tedarikçi seçimi, gecikme riski ve sipariş tahsisi için AHP/TOPSIS, lojistik regresyon, Monte Carlo ve maliyet modellerini birleştiren bir karar destek prototipi.**
 
