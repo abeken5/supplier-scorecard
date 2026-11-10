@@ -22,10 +22,32 @@ st.set_page_config(page_title="Tedarikçi Performans Paneli", layout="wide")
 st.title("📊 Tedarikçi Performans ve Risk Skorlama Sistemi")
 st.caption("Talep Planlama & Tedarik Zinciri Analitik Karar Destek Sistemi (DSS)")
 
+# DataCo & Standart CSV Esnek Temizleme Fonksiyonu
 def sanitize_df(df_input):
     df_clean = df_input.copy()
     df_clean.columns = df_clean.columns.astype(str).str.replace('\ufeff', '').str.strip()
     
+    # 1. DataCo Supply Chain Dataset Otomatik Sütun Adaptörü
+    dataco_mapping = {
+        'Shipping Mode': 'supplier_name',
+        'Category Name': 'product_name',
+        'Order Item Quantity': 'order_quantity',
+        'Sales per customer': 'unit_price',
+        'Days for shipping (real)': 'actual_days',
+        'Days for shipment (scheduled)': 'scheduled_days',
+        'Late_risk': 'is_delayed_flag'
+    }
+    
+    # Eğer DataCo sütunları tespit edilirse otomatik dönüştür
+    if 'Shipping Mode' in df_clean.columns or 'Days for shipping (real)' in df_clean.columns:
+        df_clean = df_clean.rename(columns=dataco_mapping)
+        # DataCo için sentetik tarih türetme (gün farkları üzerinden)
+        df_clean['order_date'] = pd.to_datetime('2026-01-01')
+        df_clean['promised_delivery_date'] = df_clean['order_date'] + pd.to_timedelta(df_clean.get('scheduled_days', 5), unit='D')
+        df_clean['actual_delivery_date'] = df_clean['order_date'] + pd.to_timedelta(df_clean.get('actual_days', 5), unit='D')
+        df_clean['accepted_quantity'] = np.where(df_clean.get('is_delayed_flag', 0) == 1, df_clean['order_quantity'] * 0.95, df_clean['order_quantity'])
+
+    # 2. Standart Sayısal ve Metin Temizliği
     for col in df_clean.columns:
         if df_clean[col].dtype == 'object' or str(df_clean[col].dtype).startswith('string'):
             df_clean[col] = df_clean[col].astype(str).str.replace(',', '.').str.strip()
@@ -57,11 +79,11 @@ st.sidebar.download_button(
     help="Kendi verinizi bu CSV formatına uygun olarak yükleyebilirsiniz."
 )
 
-with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri"):
+with st.sidebar.expander("ℹ️ Veri Formatı Gereksinimleri & DataCo Desteği"):
     st.markdown("""
-    Yükleyeceğiniz CSV dosyasında varsayılan veya ek olarak şu sütunlar kullanılabilir:
-    - **Sipariş Detayı**: order_id, supplier_name, product_name, order_date, promised_date, actual_delivery_date, order_quantity, accepted_quantity, unit_price
-    - **Finansal Detaylar (Opsiyonel)**: freight_cost, customs_duty_rate, payment_terms_days, lead_time_std, rework_cost_factor, financial_health
+    **Desteklenen Veri Formatları:**
+    1. **Standart CSV Formatı**: `supplier_name`, `product_name`, `order_quantity`, `unit_price`, `promised_delivery_date`, `actual_delivery_date`.
+    2. **DataCo Supply Chain Dataset (Kaggle)**: Kaggle açık kaynak veri setlerini yüklediğinizde sütunlar (`Shipping Mode`, `Days for shipping (real)`, `Sales per customer`) otomatik olarak adapte edilir.
     """)
 
 # Veri Durumu ve Fail-Safe Kontrolü
