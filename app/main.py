@@ -5,7 +5,6 @@ import numpy as np
 import sys
 import os
 
-# src klasörünü yola ekleme
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.kpi.otif import calculate_kpis
@@ -41,7 +40,6 @@ def load_default_data():
     df_raw = pd.read_csv("data/orders.csv")
     return sanitize_df(df_raw)
 
-# Sol Panel: Veri Yükleme Alanı
 st.sidebar.header("📁 Veri Kaynağı")
 uploaded_file = st.sidebar.file_uploader("Kendi Veri Setini Yükle (CSV)", type=["csv"])
 
@@ -55,7 +53,6 @@ st.sidebar.download_button(
     mime="text/csv"
 )
 
-# Veri Durumu Kontrolü
 if uploaded_file is not None:
     try:
         raw_uploaded = pd.read_csv(uploaded_file, sep=None, engine='python', encoding='utf-8-sig')
@@ -70,31 +67,24 @@ else:
 
 st.sidebar.markdown("---")
 
-# Sol Panel: İşletme Sermayesi Ayarları
 st.sidebar.header("💰 İşletme Sermayesi Ayarları")
 wacc_rate = st.sidebar.slider("Ağırlıklı Ortalama Sermaye Maliyeti (WACC %)", min_value=10, max_value=80, value=40, step=5) / 100.0
 st.sidebar.caption("Not: Yüksek enflasyon/faiz ortamında işletme sermayesi finansman maliyetini simüle eder.")
 
 st.sidebar.markdown("---")
 
-# Sol Panel: AHP Ağırlıkları
 st.sidebar.header("⚖️ AHP Kriter Öncelikleri")
 w_otif = st.sidebar.slider("OTIF Önemi", 1, 9, 5)
 w_delay = st.sidebar.slider("Gecikme Günü Önemi", 1, 9, 3)
 w_defect = st.sidebar.slider("Hata Oranı Önemi", 1, 9, 2)
 w_price = st.sidebar.slider("Fiyat / TCO Önemi", 1, 9, 1)
 
-# KPI & TCO Hesaplama Koruması
+# Saf Hesaplamalar
 kpi_df = calculate_kpis(df)
-
-try:
-    tco_df = calculate_supplier_tco(df, wacc=wacc_rate)
-except Exception:
-    tco_df = calculate_supplier_tco(default_df, wacc=wacc_rate)
+tco_df = calculate_supplier_tco(df, wacc=wacc_rate)
 
 kpi_tco_df = pd.merge(kpi_df, tco_df, on='supplier_name', how='left')
 
-# TOPSIS
 pairwise_matrix = np.array([
     [1.0,           w_otif/w_delay, w_otif/w_defect, w_otif/w_price],
     [w_delay/w_otif, 1.0,           w_delay/w_defect, w_delay/w_price],
@@ -111,7 +101,6 @@ kpi_tco_df['TOPSIS Skor'] = topsis_scores
 kpi_tco_df['TCO_Sıralama'] = kpi_tco_df['TOPSIS Skor'].rank(ascending=False, method='min').fillna(0).astype(int)
 kpi_tco_df['Fiyat_Sıralaması'] = kpi_tco_df['unit_price_avg'].rank(ascending=True, method='min').astype(int)
 
-# Üst KPI Kartları
 st.subheader("📈 Genel Tedarikçi KPI & TCO Özeti")
 metric_cols = st.columns(max(1, len(kpi_tco_df)))
 for i, row in kpi_tco_df.iterrows():
@@ -125,7 +114,6 @@ for i, row in kpi_tco_df.iterrows():
 
 st.markdown("---")
 
-# Sekme Mimarisi
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "💵 Fiyat vs TCO (Aha! Tablosu)",
     "🏆 TOPSIS & Skorlama", 
