@@ -1,4 +1,4 @@
-order_id,supplier_name,product_name,order_date,promised_delivery_date,actual_delivery_date,order_quantity,accepted_quantity,unit_price
+"Gerçek kurumsal veri gizliliği (NDA) gereği demo verisi olarak endüstriyel parametrelere uygun hazırlanmış sentetik sipariş seti kullanılmaktadır. Ancak sistem mimarisi gerçek ERP (SAP/Oracle) CSV dışa aktarımlarını doğrudan işleyecek fail-safe altyapıya sahiptir."order_id,supplier_name,product_name,order_date,promised_delivery_date,actual_delivery_date,order_quantity,accepted_quantity,unit_price
 2000,Bursa Otomotiv Yan Sanayi,Rulman 6204,2026-02-21,2026-02-24,2026-02-24,1000,970,49.88
 2001,Apex Fasteners Inc,Karton Koli 40x40,2026-01-15,2026-01-19,2026-01-19,50,49,98.81
 2002,Bursa Otomotiv Yan Sanayi,Sensör Kartı V2,2026-03-13,2026-03-16,2026-03-16,250,246,61.75

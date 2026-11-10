@@ -63,3 +63,5 @@ supplier-scorecard/
 │       ├── ahp_weights.py   # AHP Ağırlıklandırma & CR Kontrolü
 │       └── topsis.py        # TOPSIS Skorlama Algoritması
 └── requirements.txt
+
+"Gerçek kurumsal veri gizliliği (NDA) gereği demo verisi olarak endüstriyel parametrelere uygun hazırlanmış sentetik sipariş seti kullanılmaktadır. Ancak sistem mimarisi gerçek ERP (SAP/Oracle) CSV dışa aktarımlarını doğrudan işleyecek fail-safe altyapıya sahiptir."
