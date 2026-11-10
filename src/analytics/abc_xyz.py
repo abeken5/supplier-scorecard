@@ -8,27 +8,31 @@ def calculate_abc_xyz(df):
     """
     df = df.copy()
 
-    # Sütun İsimlerini Temizleme
+    # 1. Sütun İsimlerini Temizleme
     df.columns = df.columns.astype(str).str.replace('\ufeff', '').str.strip()
 
-    # Sayısal Sütun Tespiti
+    # 2. Sayısal Sütun Tespiti
     qty_col = 'order_quantity' if 'order_quantity' in df.columns else 'order_units'
     if qty_col not in df.columns:
         qty_col = df.columns[0]
 
-    # Sayısal Dönüştürme (Virgül -> Nokta Dönüşümü & Float Zorlaması)
-    for col in [qty_col, 'unit_price']:
-        if col in df.columns:
-            if df[col].dtype == 'object' or str(df[col].dtype).startswith('string'):
-                df[col] = df[col].astype(str).str.replace(',', '.').str.strip()
-            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0).astype(float)
-        else:
-            df[col] = 0.0
+    # 3. Sütunları PyArrow Bağlamından Çıkarıp Saf Standart Pandas/NumPy Float Yapma
+    def clean_to_float_array(series):
+        # Eğer metin (string/object) ise virgülleri noktaya çevir
+        s_str = series.astype(str).str.replace(',', '.').str.strip()
+        # Sayıya çevir ve PyArrow nesnesinden sıyrılmak için .to_numpy() kullan
+        return pd.to_numeric(s_str, errors='coerce').fillna(0.0).to_numpy(dtype=float)
 
-    # Ciro Hesaplama (Artık float * float olduğu için PyArrow çökmez)
-    df['total_spend'] = df[qty_col] * df['unit_price']
+    qty_values = clean_to_float_array(df[qty_col])
+    price_values = clean_to_float_array(df['unit_price']) if 'unit_price' in df.columns else np.zeros(len(df))
 
-    # Ürün Bazlı Toplam Harcama ve Talep İstatistikleri
+    # 4. Ciro Hesaplama (Saf NumPy Çarpımı - PyArrow Engeline Takılmaz)
+    df['total_spend'] = qty_values * price_values
+    df[qty_col] = qty_values
+    if 'unit_price' in df.columns:
+        df['unit_price'] = price_values
+
+    # 5. Ürün Bazlı Toplam Harcama ve Talep İstatistikleri
     product_summary = df.groupby('product_name').agg(
         total_spend=('total_spend', 'sum'),
         mean_demand=(qty_col, 'mean'),
@@ -37,7 +41,7 @@ def calculate_abc_xyz(df):
 
     product_summary['std_demand'] = product_summary['std_demand'].fillna(0.0)
 
-    # 1. ABC Analizi (Ciroya Göre)
+    # 6. ABC Analizi (Ciroya Göre)
     product_abc = product_summary.sort_values(by='total_spend', ascending=False).reset_index(drop=True)
     product_abc['cum_spend'] = product_abc['total_spend'].cumsum()
     total_spend_sum = product_abc['total_spend'].sum()
@@ -57,7 +61,7 @@ def calculate_abc_xyz(df):
 
     product_abc['abc_class'] = product_abc['cum_perc'].apply(assign_abc)
 
-    # 2. XYZ Analizi (Talep Değişkenliği CV = std / mean)
+    # 7. XYZ Analizi (Talep Değişkenliği CV = std / mean)
     def assign_xyz(row):
         if row['mean_demand'] == 0:
             return 'Z'
