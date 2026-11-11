@@ -10,13 +10,7 @@
 ---
 
 ## 🔗 Canlı Demo
-🚀 **Uygulamayı Canlı Deneyin:** [Supplier Scorecard & DSS App](https://supplier-scorecard-ngn7vbvuuvdvtfnsjeqmq5j.streamlit.app/)
-> **Tedarikçi seçimi, gecikme riski ve sipariş tahsisi için AHP/TOPSIS, lojistik regresyon, Monte Carlo ve maliyet modellerini birleştiren bir karar destek prototipi.**
-
----
-
-## 🔗 Canlı Demo
-🚀 **Uygulamayı Canlı Deneyin:** [Supplier Scorecard & DSS App](https://supplier-scorecard-ngn7vbvuuvdvtfnsjeqmq5j.streamlit.app/#tedarikci-siralamasi)
+🚀 **Uygulamayı Canlı Deneyin:** [Supplier Scorecard & DSS App](https://supplier-scorecard-ngn7vbvuuvdvftnejemq5j.streamlit.app/)
 
 ---
 
@@ -83,8 +77,9 @@ supplier-scorecard/
 ├── LICENSE                  # MIT Lisansı
 └── requirements.txt         # Bağımlılıklar
 
-🛠️ Kurulum & Yerel Çalıştırma
-Bash
+## 🛠️ Kurulum & Yerel Çalıştırma
+
+```bash
 # 1. Repoyu klonlayın
 git clone [https://github.com/abeken5/supplier-scorecard.git](https://github.com/abeken5/supplier-scorecard.git)
 cd supplier-scorecard
@@ -94,16 +89,5 @@ pip install -r requirements.txt
 
 # 3. Uygulamayı çalıştırın
 streamlit run app/main.py
+
 Geliştirici: Ahmet Elvan Beken — İstanbul Üniversitesi İşletme Fakültesi (Yönetim ve Organizasyon)
-
-
----
-
-### Terminalden Gönder:
-
-Dosyayı kaydettikten sonra terminalde sırasıyla şu komutları çalıştır:
-
-```powershell
-git add README.md
-git commit -m "Fix: Dogru Streamlit canli URL adresi eklendi"
-git push origin main
